@@ -5,9 +5,11 @@ export PIPENV_VERBOSITY = -1
 
 .PHONY: check_virtualenv install test
 
-test:
+test: travis_test
 	python -m isort -c .
 	# isort behaves differently under travis, so don't run it there
+
+travis_test:
 	python -m flake8 -v --exclude=.idea,.git,venv
 	python -m pylint *.py
 

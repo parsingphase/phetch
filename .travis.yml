@@ -1,0 +1,14 @@
+dist: xenial
+language: python
+python:
+  - "3.7"
+  - "3.8"
+  - "3.9"
+  - "3.9-dev"  # 3.9 development branch
+# command to install dependencies
+install:
+  - 'pip install pipenv'
+  - 'pipenv install --dev'
+# command to run tests
+script:
+  - make install travis_test
