@@ -1,7 +1,5 @@
-Flickr API tools
+Flickr API tools [![Build Status](https://travis-ci.org/parsingphase/phetch.svg?branch=master)](https://travis-ci.org/parsingphase/phetch)
 ================
-
-Uses https://stuvel.eu/software/flickrapi/
 
 ## Setup 
 
@@ -29,3 +27,7 @@ eg `python3 phetch.py 72157714807457311 download`
 To set up an OSX screensaver using a downloaded album, see [docs/osx-saver.md]
 
 Valid size suffixes: See https://www.flickr.com/services/api/misc.urls.html
+
+## Credits
+
+Built on https://stuvel.eu/software/flickrapi/
