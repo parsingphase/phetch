@@ -1,17 +1,18 @@
+#!/usr/bin/env python
+"""
+Fetch one or more Flickr albums. Run with --help for details
+"""
+
 import argparse
+import sys
 from pathlib import Path
 from time import sleep
 
 import flickrapi
 import requests
+from pathvalidate import sanitize_filename
 from yaml import BaseLoader
 from yaml import load as yload
-from pathvalidate import sanitize_filename
-
-
-# album_id = '72157714145527936' # birds
-# album_id = '72157714807457311'  # wildlife
-# output_dir = './download'
 
 
 def parse_cli_args():
@@ -31,14 +32,17 @@ def parse_cli_args():
 
 
 def init_flickr_client(config_file):
+    """
+    Initialise and return flickr client library using specified config file
+    :param config_file:
+    :return:
+    """
     config_path = Path(config_file)
     if not config_path.exists():
         print(f'Configfile {config_file} not found')
-        exit(1)
+        sys.exit(1)
 
-    configData = config_path.read_text()
-    config = yload(configData, Loader=BaseLoader)
-    # print(config)
+    config = yload(config_path.read_text(), Loader=BaseLoader)
 
     flickr = flickrapi.FlickrAPI(config['api_key'], config['api_secret'], format='parsed-json')
 
@@ -46,23 +50,36 @@ def init_flickr_client(config_file):
 
 
 class Downloader:
+    """
+    Flickr album downloader
+    """
 
     def __init__(self, flickr_client):
         self.flickr = flickr_client
 
     def fetch_albums(self, albums, output):
+        """
+        Fetch albums from an array of IDs to a shared output directory
+        :param albums:
+        :param output:
+        :return:
+        """
         for album in albums:
             self.fetch_album(album, output)
 
     def fetch_album(self, album_id, output_dir):
+        """
+        Fetch single album to output directory
+        :param album_id:
+        :param output_dir:
+        :return:
+        """
         album_response = self.flickr.photosets.getInfo(photoset_id=album_id)
         album_title = album_response['photoset']['title']['_content']
         print(f'Fetching album {album_title} ({album_id})')
 
         page = 1
-        photoset_response = self.fetch_album_page(album_id, page)
-        # print(photoset_response)
-        # exit(1)
+        photoset_response = self.fetch_photoset_photos(album_id, page)
         pages = int(photoset_response['photoset']['pages'])
 
         i = 1
@@ -70,9 +87,6 @@ class Downloader:
         while page <= pages:
             photos = photoset_response['photoset']['photo']
             for photo in photos:
-                sizes = self.flickr.photos.getSizes(photo_id=photo['id'])
-                # print(sizes)
-                exit(1)
                 outfile = self.local_filename_for_photo(photo, output_dir)
                 if not Path(outfile).exists():
                     print(f'Downloading: {i}: ', end='')
@@ -83,11 +97,17 @@ class Downloader:
             page += 1
             if page <= pages:
                 print(f' Fetch page {page}/{pages}')
-                photoset_response = self.fetch_album_page(album_id, page)
+                photoset_response = self.fetch_photoset_photos(album_id, page)
 
         print(" Album done")
 
     def local_filename_for_photo(self, photo, output_dir):
+        """
+        Create a local filename for a photo API object
+        :param photo:
+        :param output_dir:
+        :return:
+        """
         photo_title = photo['title']
         photo_slug = self.make_title_slug(photo_title)
         outfile = f'{output_dir}/{photo_slug}{photo["id"]}.jpg'
@@ -95,16 +115,36 @@ class Downloader:
 
     @staticmethod
     def make_title_slug(photo_title):
+        """
+        Convert title string to filename-safe slug
+        :param photo_title:
+        :return:
+        """
         photo_slug = sanitize_filename(photo_title) + '_' if photo_title else ''
-        return photo_slug.lower().replace(' ','_')
+        return photo_slug.lower().replace(' ', '_')
 
     @staticmethod
-    def fetch_image(url, outfile):
-        r = requests.get(url)
-        open(outfile, 'wb').write(r.content)
-        print(f'{url} => {outfile}')
+    def fetch_image(url, outfile, verbose=False):
+        """
+        Fetch a single image from URL to local file
+        :param verbose:
+        :param url:
+        :param outfile:
+        :return:
+        """
+        response = requests.get(url)
+        open(outfile, 'wb').write(response.content)
+        if verbose:
+            print(f'{url} => {outfile}')
 
-    def fetch_album_page(self, album_id, page=1, verbose=False):
+    def fetch_photoset_photos(self, album_id, page=1, verbose=False):
+        """
+        Fetch info about photos in a given photoset
+        :param album_id:
+        :param page:
+        :param verbose:
+        :return:
+        """
         if verbose:
             print(f'Fetching {album_id}, page {page}')
         photoset_response = self.flickr.photosets.getPhotos(photoset_id=album_id, extras="url_k,url_o", page=page)
@@ -113,18 +153,15 @@ class Downloader:
 
 
 def run_cli():
+    """
+    Run the script from the CLI
+    :return:
+    """
     args = parse_cli_args()
     downloader = Downloader(init_flickr_client('./flickr.yml'))
     downloader.fetch_albums(args.album_id.split(','), args.output)
     print('All done')
 
 
-# config eg: {'api_key': 'MYKEY', 'api_secret': 'MYSECRET'}
-
-# test = flickr.test.echo(foo="bar")
-
-# photos = flickr.photos.search(user_id='73509078@N00', per_page='10')
-
-# print(photos)
-
-run_cli()
+if __name__ == '__main__':
+    run_cli()
