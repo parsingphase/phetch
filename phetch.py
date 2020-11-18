@@ -27,6 +27,8 @@ def parse_cli_args():
     )
     parser.add_argument('album_id', help='Numeric ID of album from Flickr URL. Can be a comma-separated list.')
     parser.add_argument('output', help='Directory to save files to')
+    parser.add_argument('--prefer-size-suffix', required=False, help='Preferred download size; see README.md')
+    parser.add_argument('--limit', required=False, help='Max images to download per album', type=int)
     args = parser.parse_args()
     return args
 
@@ -55,21 +57,24 @@ class Downloader:
     """
 
     def __init__(self, flickr_client):
+        self.preferred_size = None
         self.flickr = flickr_client
 
-    def fetch_albums(self, albums, output):
+    def fetch_albums(self, albums, output, limit=None):
         """
         Fetch albums from an array of IDs to a shared output directory
+        :param limit:
         :param albums:
         :param output:
         :return:
         """
         for album in albums:
-            self.fetch_album(album, output)
+            self.fetch_album(album, output, limit)
 
-    def fetch_album(self, album_id, output_dir):
+    def fetch_album(self, album_id, output_dir, limit=None):
         """
         Fetch single album to output directory
+        :param limit:
         :param album_id:
         :param output_dir:
         :return:
@@ -82,20 +87,25 @@ class Downloader:
         photoset_response = self.fetch_photoset_photos(album_id, page)
         pages = int(photoset_response['photoset']['pages'])
 
-        i = 1
+        dl_count = 1
 
-        while page <= pages:
+        while page <= pages and (dl_count <= limit or not limit):
             photos = photoset_response['photoset']['photo']
             for photo in photos:
                 outfile = self.local_filename_for_photo(photo, output_dir)
                 if not Path(outfile).exists():
-                    print(f'Downloading: {i}: ', end='')
-                    self.fetch_image(photo["url_o"], outfile)
-                    sleep(2)
-                    i += 1
+                    print(f'Downloading: {dl_count}: ', end='')
+                    photo_url = photo["url_o"]
+                    if self.preferred_size and photo["url_" + self.preferred_size]:
+                        photo_url = photo["url_" + self.preferred_size]
+                    self.fetch_image(photo_url, outfile, verbose=True)
+                    sleep(0.5)
+                    dl_count += 1
+                    if limit and (dl_count > limit):
+                        break
 
             page += 1
-            if page <= pages:
+            if page <= pages and dl_count < limit:
                 print(f' Fetch page {page}/{pages}')
                 photoset_response = self.fetch_photoset_photos(album_id, page)
 
@@ -140,6 +150,7 @@ class Downloader:
     def fetch_photoset_photos(self, album_id, page=1, verbose=False):
         """
         Fetch info about photos in a given photoset
+        :param limit:
         :param album_id:
         :param page:
         :param verbose:
@@ -147,9 +158,19 @@ class Downloader:
         """
         if verbose:
             print(f'Fetching {album_id}, page {page}')
-        photoset_response = self.flickr.photosets.getPhotos(photoset_id=album_id, extras="url_k,url_o", page=page)
-        print(photoset_response)
+        extras = "url_o" + (",url_" + self.preferred_size if self.preferred_size else "")
+        photoset_response = self.flickr.photosets.getPhotos(
+            photoset_id=album_id, extras=extras, page=page, media='photos'
+        )
         return photoset_response
+
+    def set_preferred_size_suffix(self, suffix):
+        """
+        Set the preferred size suffix; valid values are listed at https://www.flickr.com/services/api/misc.urls.html
+        :param suffix:
+        :return:
+        """
+        self.preferred_size = suffix
 
 
 def run_cli():
@@ -159,7 +180,13 @@ def run_cli():
     """
     args = parse_cli_args()
     downloader = Downloader(init_flickr_client('./flickr.yml'))
-    downloader.fetch_albums(args.album_id.split(','), args.output)
+    if args.prefer_size_suffix:
+        downloader.set_preferred_size_suffix(args.prefer_size_suffix)
+
+    if not Path(args.output).is_dir():
+        Path(args.output).mkdir()
+
+    downloader.fetch_albums(args.album_id.split(','), args.output, limit=args.limit)
     print('All done')
 
 
