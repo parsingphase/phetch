@@ -12,6 +12,7 @@ pylint = "*"
 flickrapi = "*"
 requests = "*"
 pathvalidate = "*"
+pyyaml = "*"
 
 [requires]
 python_version = "3.8"

@@ -185,7 +185,8 @@ def run_cli():
 
     output_dir = args.output.rstrip('/')
     if not Path(output_dir).is_dir():
-        Path(output_dir).mkdir()
+        print(f'Output dir {output_dir} did not exist, creating it')
+        Path(output_dir).mkdir(parents=True)
 
     downloader.fetch_albums(args.album_id.split(','), output_dir, limit=args.limit)
     print('All done')

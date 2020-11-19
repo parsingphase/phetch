@@ -3,7 +3,7 @@
 SHELL := /bin/bash
 export PIPENV_VERBOSITY = -1
 
-.PHONY: check_virtualenv install test
+.PHONY: check_virtualenv install test travis_test
 
 test: travis_test
 	python -m isort -c .
@@ -18,3 +18,6 @@ check_virtualenv:
 
 install: check_virtualenv
 	pipenv install
+
+venv:
+	python3 -m venv venv
