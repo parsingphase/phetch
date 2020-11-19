@@ -24,7 +24,7 @@ For usage, `python3 phetch.py --help`
 
 eg `python3 phetch.py 72157714807457311 download`
 
-To set up an OSX screensaver using a downloaded album, see [docs/osx-saver.md]
+To set up an OSX screensaver using a downloaded album, see [docs/osx-saver.md](docs/osx-saver.md)
 
 Valid size suffixes: See https://www.flickr.com/services/api/misc.urls.html
 
