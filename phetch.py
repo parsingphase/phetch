@@ -110,7 +110,7 @@ class Downloader:
                 self.download_image(photo['url'], outfile, True)
                 sleep(0.1)
                 downloaded += 1
-                if downloaded >= limit:
+                if limit and (downloaded >= limit):
                     break
 
     def local_filename_for_photo(self, photo, path: str = ""):
