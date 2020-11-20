@@ -13,12 +13,12 @@ test: travis_test
 
 travis_test:
 	python -m flake8 -v --exclude=.idea,.git,venv
-	python -m pylint *.py
 
 travis_mypy:
 	echo "PYVERSION '${PYVERSION}'"
 	# Fails under py 3.9 - https://github.com/PyCQA/pylint/issues/3882
-	if [ "${PYVERSION:7:3}" != "3.9" ]; then python -m mypy --ignore-missing-imports --disallow-untyped-calls *.py; fi
+	if [ "${PYVERSION:7:3}" != "3.9" ]; then python -m pylint *.py; fi
+	python -m mypy --ignore-missing-imports --disallow-untyped-calls *.py
 
 check_virtualenv:
 	pipenv --venv

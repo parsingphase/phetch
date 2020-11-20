@@ -103,8 +103,9 @@ class Downloader:
             photos = photos[:limit]
         for photo in photos:
             outfile = output_dir + '/' + photo['local_file']
-            self.fetch_image(photo['url'], outfile, True)
-            sleep(0.1)
+            if not Path(outfile).exists():
+                self.fetch_image(photo['url'], outfile, True)
+                sleep(0.1)
 
     def local_filename_for_photo(self, photo, path: str = ""):
         """
