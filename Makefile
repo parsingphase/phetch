@@ -12,7 +12,7 @@ test: travis_test
 travis_test:
 	python -m flake8 -v --exclude=.idea,.git,venv
 	python -m pylint *.py
-	python -m mypy --ignore-missing-imports *.py
+	python -m mypy --ignore-missing-imports --disallow-untyped-calls *.py
 
 check_virtualenv:
 	pipenv --venv

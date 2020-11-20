@@ -7,7 +7,7 @@ import argparse
 import sys
 from pathlib import Path
 from time import sleep
-from typing import List
+from typing import Any, List, Optional
 
 import flickrapi
 import requests
@@ -19,7 +19,7 @@ from yaml import load as yload
 Photo = TypedDict('Photo', {'url': str, 'local_file': str})
 
 
-def parse_cli_args():
+def parse_cli_args() -> argparse.Namespace:
     """
     Specify and parse command-line arguments
 
@@ -59,12 +59,13 @@ class Downloader:
     """
     Flickr album downloader
     """
+    preferred_size: Optional[str]
 
-    def __init__(self, flickr_client):
+    def __init__(self, flickr_client: Any) -> None:
         self.preferred_size = None
         self.flickr = flickr_client
 
-    def fetch_albums(self, albums, output, limit=0):
+    def fetch_albums(self, albums: List[str], output: str, limit: int = 0) -> None:
         """
         Fetch albums from an array of IDs to a shared output directory
         :param limit:
@@ -120,17 +121,17 @@ class Downloader:
         return outfile
 
     @staticmethod
-    def make_title_slug(photo_title):
+    def make_title_slug(photo_title: str):
         """
         Convert title string to filename-safe slug
         :param photo_title:
         :return:
         """
-        photo_slug = sanitize_filename(photo_title) + '_' if photo_title else ''
+        photo_slug = str(sanitize_filename(photo_title)) + '_' if photo_title else ''
         return photo_slug.lower().replace(' ', '_')
 
     @staticmethod
-    def fetch_image(url, outfile, verbose=False):
+    def fetch_image(url: str, outfile: str, verbose: bool = False):
         """
         Fetch a single image from URL to local file
         :param verbose:
@@ -143,7 +144,7 @@ class Downloader:
         if verbose:
             print(f'{url} => {outfile}')
 
-    def fetch_photoset_photos(self, album_id, page=1, verbose=False):
+    def fetch_photoset_photos(self, album_id: str, page: int = 1, verbose: bool = False):
         """
         Fetch info about photos in a given photoset
         :param limit:
@@ -160,7 +161,7 @@ class Downloader:
         )
         return photoset_response
 
-    def set_preferred_size_suffix(self, suffix):
+    def set_preferred_size_suffix(self, suffix: str) -> None:
         """
         Set the preferred size suffix; valid values are listed at https://www.flickr.com/services/api/misc.urls.html
         :param suffix:
@@ -202,7 +203,7 @@ class Downloader:
         return photos
 
 
-def run_cli():
+def run_cli() -> None:
     """
     Run the script from the CLI
     :return:
