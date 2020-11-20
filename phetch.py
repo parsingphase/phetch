@@ -7,12 +7,16 @@ import argparse
 import sys
 from pathlib import Path
 from time import sleep
+from typing import List
 
 import flickrapi
 import requests
 from pathvalidate import sanitize_filename
+from typing_extensions import TypedDict
 from yaml import BaseLoader
 from yaml import load as yload
+
+Photo = TypedDict('Photo', {'url': str, 'local_file': str})
 
 
 def parse_cli_args():
@@ -28,12 +32,12 @@ def parse_cli_args():
     parser.add_argument('album_id', help='Numeric ID of album from Flickr URL. Can be a comma-separated list.')
     parser.add_argument('output', help='Directory to save files to')
     parser.add_argument('--prefer-size-suffix', required=False, help='Preferred download size; see README.md')
-    parser.add_argument('--limit', required=False, help='Max images to download per album', type=int, default=0)
+    parser.add_argument('--limit', required=False, help='Max images to download', type=int, default=0)
     args = parser.parse_args()
     return args
 
 
-def init_flickr_client(config_file):
+def init_flickr_client(config_file: str):
     """
     Initialise and return flickr client library using specified config file
     :param config_file:
@@ -68,59 +72,51 @@ class Downloader:
         :param output:
         :return:
         """
-        for album in albums:
-            self.fetch_album(album, output, limit)
+        photos = self.scan_albums(albums)
+        self.fetch_photos(photos, output, limit)
 
-    def fetch_album(self, album_id, output_dir, limit=0):
+    def scan_albums(self, albums: List[str]) -> List[Photo]:
         """
-        Fetch single album to output directory
+        Scan albums, given as a range of IDs, for potential dowloads
         :param limit:
-        :param album_id:
-        :param output_dir:
+        :param albums:
+        :param output:
         :return:
         """
-        album_response = self.flickr.photosets.getInfo(photoset_id=album_id)
-        album_title = album_response['photoset']['title']['_content']
-        print(f'Fetching album {album_title} ({album_id})')
+        photo_list = []  # List[Photo]
 
-        page = 1
-        photoset_response = self.fetch_photoset_photos(album_id, page)
-        pages = int(photoset_response['photoset']['pages'])
+        for album in albums:
+            photo_list += self.scan_album(album)
 
-        dl_count = 1
+        return photo_list
 
-        while page <= pages and (dl_count <= limit or not limit):
-            photos = photoset_response['photoset']['photo']
-            for photo in photos:
-                outfile = self.local_filename_for_photo(photo, output_dir)
-                if not Path(outfile).exists():
-                    print(f'Downloading: {dl_count}: ', end='')
-                    photo_url = photo["url_o"]
-                    if self.preferred_size and "url_" + self.preferred_size in photo:
-                        photo_url = photo["url_" + self.preferred_size]
-                    self.fetch_image(photo_url, outfile, verbose=True)
-                    sleep(0.5)
-                    dl_count += 1
-                    if limit and (dl_count > limit):
-                        break
+    def fetch_photos(self, photos: List[Photo], output_dir: str, limit: int = 0):
+        """
+        Fetch up to a maximum number of images from the calculated list
+        :param photos:
+        :param output_dir:
+        :param limit:
+        :return:
+        """
+        if limit:
+            photos = photos[:limit]
+        for photo in photos:
+            outfile = output_dir + '/' + photo['local_file']
+            self.fetch_image(photo['url'], outfile, True)
+            sleep(0.1)
 
-            page += 1
-            if page <= pages and (dl_count < limit or not limit):
-                print(f' Fetch page {page}/{pages}')
-                photoset_response = self.fetch_photoset_photos(album_id, page)
-
-        print(" Album done")
-
-    def local_filename_for_photo(self, photo, output_dir):
+    def local_filename_for_photo(self, photo, path: str = ""):
         """
         Create a local filename for a photo API object
         :param photo:
-        :param output_dir:
+        :param path:
         :return:
         """
         photo_title = photo['title']
         photo_slug = self.make_title_slug(photo_title)
-        outfile = f'{output_dir}/{photo_slug}{photo["id"]}.jpg'
+        outfile = f'{photo_slug}{photo["id"]}.jpg'
+        if path:
+            outfile = f'{path}/{outfile}'
         return outfile
 
     @staticmethod
@@ -171,6 +167,39 @@ class Downloader:
         :return:
         """
         self.preferred_size = suffix
+
+    def scan_album(self, album: str) -> List[Photo]:
+        """
+        Collect Photos data from an album
+        :param album:
+        :return:
+        """
+        photos = []  # List[Photo]
+        album_response = self.flickr.photosets.getInfo(photoset_id=album)
+        album_title = album_response['photoset']['title']['_content']
+        print(f'Scanning album {album_title} ({album})')
+
+        page = 1
+        photoset_response = self.fetch_photoset_photos(album, page)
+        pages = int(photoset_response['photoset']['pages'])
+
+        while page <= pages:
+            album_photos = photoset_response['photoset']['photo']
+            for album_photo in album_photos:
+                filename = self.local_filename_for_photo(album_photo)
+                photo_url = album_photo["url_o"]
+                if self.preferred_size and "url_" + self.preferred_size in album_photo:
+                    photo_url = album_photo["url_" + self.preferred_size]
+
+                photo: Photo = {'url': photo_url, 'local_file': filename}
+                photos.append(photo)
+
+            page += 1
+            if page <= pages:
+                print(f' Fetch page {page}/{pages}')
+                photoset_response = self.fetch_photoset_photos(album, page)
+
+        return photos
 
 
 def run_cli():
