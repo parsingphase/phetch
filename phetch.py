@@ -33,6 +33,7 @@ def parse_cli_args() -> argparse.Namespace:
     parser.add_argument('output', help='Directory to save files to')
     parser.add_argument('--prefer-size-suffix', required=False, help='Preferred download size; see README.md')
     parser.add_argument('--limit', required=False, help='Max images to download', type=int, default=0)
+    parser.add_argument('--delete-missing', help='Delete images not found in album', action="store_true")
     args = parser.parse_args()
     return args
 
@@ -65,16 +66,19 @@ class Downloader:
         self.preferred_size = None
         self.flickr = flickr_client
 
-    def fetch_albums(self, albums: List[str], output: str, limit: int = 0) -> None:
+    def fetch_albums(self, albums: List[str], output: str, delete=False, limit: int = 0) -> None:
         """
         Fetch albums from an array of IDs to a shared output directory
-        :param limit:
+        :param delete: Remove local files with no remote equivalent
+        :param limit: Download at most this many new images
         :param albums:
         :param output:
         :return:
         """
         photos = self.scan_albums(albums)
         self.fetch_photos(photos, output, limit)
+        if delete:
+            self.remove_local_without_remote(photos, local_dir=output)
 
     def scan_albums(self, albums: List[str]) -> List[Photo]:
         """
@@ -99,13 +103,15 @@ class Downloader:
         :param limit:
         :return:
         """
-        if limit:
-            photos = photos[:limit]
+        downloaded = 0
         for photo in photos:
             outfile = output_dir + '/' + photo['local_file']
             if not Path(outfile).exists():
-                self.fetch_image(photo['url'], outfile, True)
+                self.download_image(photo['url'], outfile, True)
                 sleep(0.1)
+                downloaded += 1
+                if downloaded >= limit:
+                    break
 
     def local_filename_for_photo(self, photo, path: str = ""):
         """
@@ -132,7 +138,7 @@ class Downloader:
         return photo_slug.lower().replace(' ', '_')
 
     @staticmethod
-    def fetch_image(url: str, outfile: str, verbose: bool = False):
+    def download_image(url: str, outfile: str, verbose: bool = False):
         """
         Fetch a single image from URL to local file
         :param verbose:
@@ -203,6 +209,21 @@ class Downloader:
 
         return photos
 
+    @staticmethod
+    def remove_local_without_remote(photos: List[Photo], local_dir: str):
+        """
+        Remove any local file not present in a list of photos
+        :param photos:
+        :param local_dir:
+        :return:
+        """
+        local_files = Path(local_dir).glob('*.jpg')  # assume only jpgs for now
+        remote_filenames = [photo['local_file'] for photo in photos]
+        to_remove = [file for file in local_files if file.name not in remote_filenames]
+        for file in to_remove:
+            print("Remove " + file.name + ", not found in photo list")
+            file.unlink()
+
 
 def run_cli() -> None:
     """
@@ -219,7 +240,7 @@ def run_cli() -> None:
         print(f'Output dir {output_dir} did not exist, creating it')
         Path(output_dir).mkdir(parents=True)
 
-    downloader.fetch_albums(args.album_id.split(','), output_dir, limit=args.limit)
+    downloader.fetch_albums(args.album_id.split(','), output_dir, limit=args.limit, delete=args.delete_missing)
     print('All done')
 
 
