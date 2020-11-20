@@ -2,6 +2,7 @@
 
 SHELL := /bin/bash
 export PIPENV_VERBOSITY = -1
+export PYVERSION=$(python -V)
 
 .PHONY: check_virtualenv install test travis_test travis_mypy
 
@@ -15,8 +16,9 @@ travis_test:
 	python -m pylint *.py
 
 travis_mypy:
+	echo "PYVERSION '${PYVERSION}'"
 	# Fails under py 3.9 - https://github.com/PyCQA/pylint/issues/3882
-	PYVERSION=$(python -V); if [ "${PYVERSION:7:3}" != "3.9" ]; then python -m mypy --ignore-missing-imports --disallow-untyped-calls *.py; fi
+	if [ "${PYVERSION:7:3}" != "3.9" ]; then python -m mypy --ignore-missing-imports --disallow-untyped-calls *.py; fi
 
 check_virtualenv:
 	pipenv --venv
