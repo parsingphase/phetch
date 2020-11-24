@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from PIL import Image
+from PIL import Image, ImageStat
 from PIL.ImageFile import ImageFile
 
 
@@ -8,12 +8,15 @@ class Watermarker:
     short_edge_watermark_ratio: float
     watermark: ImageFile
     watermark_opacity: float
+    watermark_brightness_threshold: int  # max target area brightness to use the "light" watermark
 
     def __init__(self, watermark_file: str) -> None:
         super().__init__()
         self.watermark = Image.open(watermark_file)
+        self.inverse_watermark = self.invert_watermark(self.watermark)
         self.short_edge_watermark_ratio = 0.14  # default
         self.watermark_opacity = 0.5  # default
+        self.watermark_brightness_threshold = 200  # default
 
     def __del__(self):
         self.watermark.close()
@@ -43,10 +46,27 @@ class Watermarker:
         :return:
         """
         watermark_width, watermark_height = self.calculate_watermark_dimensions(image)
-        watermark_position = (image.width - watermark_width, image.height - watermark_height)
-        local_watermark = self.prepare_pastable_watermark(watermark_width, watermark_height)
-        image = self.apply_prepared_watermark(image, local_watermark, watermark_position)
+        watermark_left = image.width - watermark_width
+        watermark_top = image.height - watermark_height
+        area_is_bright = self.watermark_area_is_bright(image, watermark_left, watermark_top)
+
+        local_watermark = self.prepare_pastable_watermark(watermark_width, watermark_height, dark=area_is_bright)
+        image = self.apply_prepared_watermark(image, local_watermark, (watermark_left, watermark_top))
         return image
+
+    def watermark_area_is_bright(self, image: Image, watermark_left: int, watermark_top: int) -> bool:
+        """
+        Check if the mean brightness (crudely calculated) of the bottom-right corner is "bright" or "dark"
+        :param image:
+        :param watermark_left:
+        :param watermark_top:
+        :return:
+        """
+        target_area = image.crop((watermark_left, watermark_top, image.width - 1, image.height - 1))
+        area_props = ImageStat.Stat(target_area)
+        brightness = sum(area_props.mean) / len(area_props.mean)
+        area_is_bright = brightness > self.watermark_brightness_threshold
+        return area_is_bright
 
     @staticmethod
     def apply_prepared_watermark(image, local_watermark, watermark_position) -> ImageFile:
@@ -79,15 +99,25 @@ class Watermarker:
             watermark_width = int(watermark_height * watermark_aspect)
         return watermark_width, watermark_height
 
-    def prepare_pastable_watermark(self, watermark_width: int, watermark_height: int) -> Image:
+    def prepare_pastable_watermark(self, watermark_width: int, watermark_height: int, dark: bool = False) -> Image:
         """
         Scale and apply opacity to watermark as required for use at specified size
+        :param dark:
         :param watermark_width:
         :param watermark_height:
         :return:
         """
-        local_watermark = self.watermark.resize((watermark_width, watermark_height))
+        watermark = self.inverse_watermark if dark else self.watermark
+        local_watermark = watermark.resize((watermark_width, watermark_height))
         r, g, b, a = local_watermark.split()
         a = a.point(lambda i: i * self.watermark_opacity)
         local_watermark = Image.merge('RGBA', (r, g, b, a))
         return local_watermark
+
+    @staticmethod
+    def invert_watermark(watermark: Image):
+        r, g, b, a = watermark.split()
+        r = r.point(lambda i: 255 - i)
+        g = g.point(lambda i: 255 - i)
+        b = b.point(lambda i: 255 - i)
+        return Image.merge('RGBA', (r, g, b, a))
