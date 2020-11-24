@@ -7,7 +7,7 @@ import argparse
 import sys
 from pathlib import Path
 from time import sleep
-from typing import Any, List, Optional
+from typing import Any, Callable, List, Optional
 
 import flickrapi
 import requests
@@ -15,6 +15,8 @@ from pathvalidate import sanitize_filename
 from typing_extensions import TypedDict
 from yaml import BaseLoader
 from yaml import load as yload
+
+from watermarker import Watermarker
 
 Photo = TypedDict('Photo', {'url': str, 'local_file': str})
 
@@ -34,6 +36,7 @@ def parse_cli_args() -> argparse.Namespace:
     parser.add_argument('--prefer-size-suffix', required=False, help='Preferred download size; see README.md')
     parser.add_argument('--limit', required=False, help='Max images to download', type=int, default=0)
     parser.add_argument('--delete-missing', help='Delete images not found in album', action="store_true")
+    parser.add_argument('--apply-watermark', required=False, help='Add watermark to bottom right', type=str)
     args = parser.parse_args()
     return args
 
@@ -61,10 +64,25 @@ class Downloader:
     Flickr album downloader
     """
     preferred_size: Optional[str]
+    post_download_callback: Optional[Callable[[str], None]]
 
     def __init__(self, flickr_client: Any) -> None:
         self.preferred_size = None
         self.flickr = flickr_client
+        self.post_download_callback = None
+
+    def set_preferred_size_suffix(self, suffix: str) -> 'Downloader':
+        """
+        Set the preferred size suffix; valid values are listed at https://www.flickr.com/services/api/misc.urls.html
+        :param suffix:
+        :return:
+        """
+        self.preferred_size = suffix
+        return self
+
+    def set_post_download_callback(self, callback: Optional[Callable[[str], None]]) -> 'Downloader':
+        self.post_download_callback = callback
+        return self
 
     def fetch_albums(self, albums: List[str], output: str, delete=False, limit: int = 0) -> None:
         """
@@ -137,8 +155,7 @@ class Downloader:
         photo_slug = str(sanitize_filename(photo_title)) + '_' if photo_title else ''
         return photo_slug.lower().replace(' ', '_')
 
-    @staticmethod
-    def download_image(url: str, outfile: str, verbose: bool = False):
+    def download_image(self, url: str, outfile: str, verbose: bool = False):
         """
         Fetch a single image from URL to local file
         :param verbose:
@@ -150,6 +167,8 @@ class Downloader:
         open(outfile, 'wb').write(response.content)
         if verbose:
             print(f'{url} => {outfile}')
+        if self.post_download_callback:
+            self.post_download_callback(outfile)
 
     def fetch_photoset_photos(self, album_id: str, page: int = 1, verbose: bool = False):
         """
@@ -167,14 +186,6 @@ class Downloader:
             photoset_id=album_id, extras=extras, page=page, media='photos'
         )
         return photoset_response
-
-    def set_preferred_size_suffix(self, suffix: str) -> None:
-        """
-        Set the preferred size suffix; valid values are listed at https://www.flickr.com/services/api/misc.urls.html
-        :param suffix:
-        :return:
-        """
-        self.preferred_size = suffix
 
     def scan_album(self, album: str) -> List[Photo]:
         """
@@ -234,6 +245,10 @@ def run_cli() -> None:
     downloader = Downloader(init_flickr_client('./flickr.yml'))
     if args.prefer_size_suffix:
         downloader.set_preferred_size_suffix(args.prefer_size_suffix)
+
+    if args.apply_watermark:
+        watermarker = Watermarker(args.apply_watermark)
+        downloader.set_post_download_callback(lambda f: watermarker.mark_in_place(f))
 
     output_dir = args.output.rstrip('/')
     if not Path(output_dir).is_dir():
