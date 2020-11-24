@@ -85,18 +85,17 @@ class Watermarker:
     def calculate_watermark_dimensions(self, image_file: ImageFile) -> Tuple[int, int]:
         """
         Calculate the size a watermark should be for a given Image object such that the
-        short side of the watermark is self.short_edge_watermark_ratio of the larger image
+        width of the watermark is self.short_edge_watermark_ratio of the larger image's longer dimension
         :param image_file:
         :return:
         """
         is_tall = image_file.height > image_file.width
         watermark_aspect = self.watermark.width / self.watermark.height
         if is_tall:
-            watermark_width = int(image_file.width * self.short_edge_watermark_ratio)
-            watermark_height = int(watermark_width / watermark_aspect)
+            watermark_width = int(image_file.height * self.short_edge_watermark_ratio)
         else:
-            watermark_height = int(image_file.height * self.short_edge_watermark_ratio)
-            watermark_width = int(watermark_height * watermark_aspect)
+            watermark_width = int(image_file.width * self.short_edge_watermark_ratio)
+        watermark_height = int(watermark_width / watermark_aspect)
         return watermark_width, watermark_height
 
     def prepare_pastable_watermark(self, watermark_width: int, watermark_height: int, dark: bool = False) -> Image:
