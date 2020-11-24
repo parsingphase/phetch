@@ -1,3 +1,4 @@
 flickr.yml
 download
 fetch_*.sh
+__pycache__
