@@ -22,7 +22,7 @@ Fetch images from a list of albums into a local directory
 
 For usage, `python3 phetch.py --help`
 
-    usage: phetch.py [-h] [--prefer-size-suffix PREFER_SIZE_SUFFIX] [--limit LIMIT] album_id output
+    usage: phetch.py [-h] [--prefer-size-suffix SUFFIX] [--apply-watermark WATERMARK_FILE] [--limit LIMIT] [--delete-missing] album_id output
     
     Download Flickr album images to a directory for use in screensavers, etc
     
@@ -32,9 +32,12 @@ For usage, `python3 phetch.py --help`
     
     optional arguments:
       -h, --help            show this help message and exit
-      --prefer-size-suffix PREFER_SIZE_SUFFIX
+      --prefer-size-suffix SUFFIX
                             Preferred download size; see README.md
-      --limit LIMIT         Max images to download per album
+      --apply-watermark WATERMARK_FILE
+                            Add watermark to bottom right
+      --limit LIMIT         Max images to download
+      --delete-missing      Delete images not found in album
 
 
 eg `python3 phetch.py 72157714807457311 download`
@@ -42,6 +45,13 @@ eg `python3 phetch.py 72157714807457311 download`
 To set up an OSX screensaver using a downloaded album, see [docs/osx-saver.md](docs/osx-saver.md)
 
 Valid size suffixes: See https://www.flickr.com/services/api/misc.urls.html
+
+The watermark function is intended only for download and processing of your own images.
+
+## Code Maturity
+
+This code is [WOMM-compliant](https://blog.codinghorror.com/the-works-on-my-machine-certification-program/); 
+it is not intended to be generally robust. Feel free to send requests or PRs, or fork this.
 
 ## Credits
 

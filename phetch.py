@@ -27,10 +27,12 @@ def parse_cli_args() -> argparse.Namespace:
     )
     parser.add_argument('album_id', help='Numeric ID of album from Flickr URL. Can be a comma-separated list.')
     parser.add_argument('output', help='Directory to save files to')
-    parser.add_argument('--prefer-size-suffix', required=False, help='Preferred download size; see README.md')
+    parser.add_argument('--prefer-size-suffix', required=False, help='Preferred download size; see README.md',
+                        dest='suffix')
+    parser.add_argument('--apply-watermark', required=False, help='Add watermark to bottom right', type=str,
+                        dest='watermark_file')
     parser.add_argument('--limit', required=False, help='Max images to download', type=int, default=0)
     parser.add_argument('--delete-missing', help='Delete images not found in album', action="store_true")
-    parser.add_argument('--apply-watermark', required=False, help='Add watermark to bottom right', type=str)
     args = parser.parse_args()
     return args
 
@@ -60,11 +62,11 @@ def run_cli() -> None:
     """
     args = parse_cli_args()
     downloader = Downloader(init_flickr_client('./flickr.yml'))
-    if args.prefer_size_suffix:
-        downloader.set_preferred_size_suffix(args.prefer_size_suffix)
+    if args.suffix:
+        downloader.set_preferred_size_suffix(args.suffix)
 
-    if args.apply_watermark:
-        watermarker = Watermarker(args.apply_watermark)
+    if args.watermark_file:
+        watermarker = Watermarker(args.watermark_file)
         downloader.set_post_download_callback(lambda f: watermarker.mark_in_place(f))
 
     output_dir = args.output.rstrip('/')
