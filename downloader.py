@@ -1,3 +1,6 @@
+"""
+Class file for Downloader
+"""
 from pathlib import Path
 from time import sleep
 from typing import Any, Callable, List, Optional
@@ -31,6 +34,11 @@ class Downloader:
         return self
 
     def set_post_download_callback(self, callback: Optional[Callable[[str], None]]) -> 'Downloader':
+        """
+        Set a callback to be used after each download
+        :param callback:
+        :return:
+        """
         self.post_download_callback = callback
         return self
 

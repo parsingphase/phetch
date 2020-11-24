@@ -11,4 +11,4 @@ install:
   - 'pipenv install --dev'
 # command to run tests
 script:
-  - make install travis_test travis_mypy
+  - make install travis_safe_tests

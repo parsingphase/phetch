@@ -1,3 +1,6 @@
+"""
+Class file for Watermarker
+"""
 from typing import Tuple
 
 from PIL import Image, ImageStat
@@ -5,6 +8,9 @@ from PIL.ImageFile import ImageFile
 
 
 class Watermarker:
+    """
+    Tool to add transparent watermark to images
+    """
     long_edge_watermark_ratio: float
     watermark: ImageFile
     watermark_opacity: float
@@ -23,12 +29,27 @@ class Watermarker:
         self.watermark.close()
 
     def set_watermark_size(self, long_edge_ratio: float):
+        """
+        Set watermark width as proportion of image long edge
+        :param long_edge_ratio:
+        :return:
+        """
         self.long_edge_watermark_ratio = long_edge_ratio
 
     def set_border_size(self, border_ratio: float):
+        """
+        Set watermark border offset as proportion of image long edge
+        :param border_ratio:
+        :return:
+        """
         self.long_edge_border_ratio = border_ratio
 
     def set_watermark_opacity(self, opacity: float):
+        """
+        Set watermark opacity (0-1)
+        :param opacity:
+        :return:
+        """
         self.watermark_opacity = opacity
 
     def mark_in_place(self, image_file_path: str) -> None:
@@ -115,15 +136,21 @@ class Watermarker:
         """
         watermark = self.inverse_watermark if dark else self.watermark
         local_watermark = watermark.resize((watermark_width, watermark_height))
-        r, g, b, a = local_watermark.split()
-        a = a.point(lambda i: i * self.watermark_opacity)
-        local_watermark = Image.merge('RGBA', (r, g, b, a))
+        ch_r, ch_g, ch_b, ch_a = local_watermark.split()
+        ch_a = ch_a.point(lambda i: i * self.watermark_opacity)
+        local_watermark = Image.merge('RGBA', (ch_r, ch_g, ch_b, ch_a))
         return local_watermark
 
     @staticmethod
     def invert_watermark(watermark: Image):
-        r, g, b, a = watermark.split()
-        r = r.point(lambda i: 255 - i)
-        g = g.point(lambda i: 255 - i)
-        b = b.point(lambda i: 255 - i)
-        return Image.merge('RGBA', (r, g, b, a))
+        """
+        Invert the watermark's RGB values pixel-by-pixel,
+        ie make a dark watermark out of a light one
+        :param watermark:
+        :return:
+        """
+        ch_r, ch_g, ch_b, ch_a = watermark.split()
+        ch_r = ch_r.point(lambda i: 255 - i)
+        ch_g = ch_g.point(lambda i: 255 - i)
+        ch_b = ch_b.point(lambda i: 255 - i)
+        return Image.merge('RGBA', (ch_r, ch_g, ch_b, ch_a))

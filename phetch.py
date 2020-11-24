@@ -67,7 +67,7 @@ def run_cli() -> None:
 
     if args.watermark_file:
         watermarker = Watermarker(args.watermark_file)
-        downloader.set_post_download_callback(lambda f: watermarker.mark_in_place(f))
+        downloader.set_post_download_callback(watermarker.mark_in_place)
 
     output_dir = args.output.rstrip('/')
     if not Path(output_dir).is_dir():
