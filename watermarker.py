@@ -5,7 +5,7 @@ from PIL.ImageFile import ImageFile
 
 
 class Watermarker:
-    short_edge_watermark_ratio: float
+    long_edge_watermark_ratio: float
     watermark: ImageFile
     watermark_opacity: float
     watermark_brightness_threshold: int  # max target area brightness to use the "light" watermark
@@ -14,15 +14,19 @@ class Watermarker:
         super().__init__()
         self.watermark = Image.open(watermark_file)
         self.inverse_watermark = self.invert_watermark(self.watermark)
-        self.short_edge_watermark_ratio = 0.14  # default
+        self.long_edge_watermark_ratio = 0.14  # default
+        self.long_edge_border_ratio = 0.01  # default
         self.watermark_opacity = 0.5  # default
         self.watermark_brightness_threshold = 200  # default
 
     def __del__(self):
         self.watermark.close()
 
-    def set_watermark_size(self, short_edge_ratio: float):
-        self.short_edge_watermark_ratio = short_edge_ratio
+    def set_watermark_size(self, long_edge_ratio: float):
+        self.long_edge_watermark_ratio = long_edge_ratio
+
+    def set_border_size(self, border_ratio: float):
+        self.long_edge_border_ratio = border_ratio
 
     def set_watermark_opacity(self, opacity: float):
         self.watermark_opacity = opacity
@@ -45,9 +49,10 @@ class Watermarker:
         :param image:
         :return:
         """
-        watermark_width, watermark_height = self.calculate_watermark_dimensions(image)
-        watermark_left = image.width - watermark_width
-        watermark_top = image.height - watermark_height
+        watermark_width, watermark_height, border_w, border_h = self.calculate_watermark_dimensions(image)
+        watermark_left = image.width - watermark_width - border_w
+        watermark_top = image.height - watermark_height - border_h
+        # "bright" area is approximate; we currently just go from top-left of watermark to bottom-right of image
         area_is_bright = self.watermark_area_is_bright(image, watermark_left, watermark_top)
 
         local_watermark = self.prepare_pastable_watermark(watermark_width, watermark_height, dark=area_is_bright)
@@ -82,21 +87,23 @@ class Watermarker:
         image = image.convert('RGB')  # must convert back to RGB to save jpg
         return image
 
-    def calculate_watermark_dimensions(self, image_file: ImageFile) -> Tuple[int, int]:
+    def calculate_watermark_dimensions(self, image_file: ImageFile) -> Tuple[int, int, int, int]:
         """
         Calculate the size a watermark should be for a given Image object such that the
         width of the watermark is self.short_edge_watermark_ratio of the larger image's longer dimension
         :param image_file:
-        :return:
+        :return: watermark width, watermark height, border width, border height
         """
         is_tall = image_file.height > image_file.width
         watermark_aspect = self.watermark.width / self.watermark.height
         if is_tall:
-            watermark_width = int(image_file.height * self.short_edge_watermark_ratio)
+            watermark_width = int(image_file.height * self.long_edge_watermark_ratio)
+            border = int(image_file.height * self.long_edge_border_ratio)
         else:
-            watermark_width = int(image_file.width * self.short_edge_watermark_ratio)
+            watermark_width = int(image_file.width * self.long_edge_watermark_ratio)
+            border = int(image_file.width * self.long_edge_border_ratio)
         watermark_height = int(watermark_width / watermark_aspect)
-        return watermark_width, watermark_height
+        return watermark_width, watermark_height, border, border
 
     def prepare_pastable_watermark(self, watermark_width: int, watermark_height: int, dark: bool = False) -> Image:
         """
