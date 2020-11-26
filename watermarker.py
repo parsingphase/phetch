@@ -61,7 +61,14 @@ class Watermarker:
         """
         image: ImageFile = Image.open(image_file_path)
         image_file = self.watermark_image(image)
-        image_file.save(image_file_path)
+        # PIL throws a lot of data away on save by default. Preserve it instead!
+        image_file.save(
+            image_file_path,
+            quality=95,
+            icc_profile=image.info['icc_profile'],
+            exif=image.info["exif"],
+            subsampling='4:4:4'
+        )
 
     def watermark_image(self, image: ImageFile) -> ImageFile:
         """

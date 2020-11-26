@@ -31,9 +31,14 @@ def parse_cli_args() -> argparse.Namespace:
                         dest='suffix')
     parser.add_argument('--apply-watermark', required=False, help='Add watermark to bottom right', type=str,
                         dest='watermark_file')
+    parser.add_argument('--watermark-opacity', required=False, help='Set watermark opacity, 0-1', type=float)
     parser.add_argument('--limit', required=False, help='Max images to download', type=int, default=0)
     parser.add_argument('--delete-missing', help='Delete images not found in album', action="store_true")
     args = parser.parse_args()
+    if args.watermark_opacity and not args.watermark_file:
+        print('--watermark-opacity is invalid without --apply-watermark')
+        parser.print_usage()
+        sys.exit(1)
     return args
 
 
@@ -67,6 +72,8 @@ def run_cli() -> None:
 
     if args.watermark_file:
         watermarker = Watermarker(args.watermark_file)
+        if args.watermark_opacity:
+            watermarker.set_watermark_opacity(args.watermark_opacity)
         downloader.set_post_download_callback(watermarker.mark_in_place)
 
     output_dir = args.output.rstrip('/')
