@@ -65,7 +65,7 @@ class Watermarker:
         image_file.save(
             image_file_path,
             quality=95,
-            icc_profile=image.info['icc_profile'],
+            icc_profile=image.info['icc_profile'] if 'icc_profile' in image.info else None,
             exif=image.info["exif"],
             subsampling='4:4:4'
         )

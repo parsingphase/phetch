@@ -3,3 +3,5 @@ download
 fetch_*.sh
 __pycache__
 data
+.eggs
+dist
