@@ -34,6 +34,8 @@ def parse_cli_args() -> argparse.Namespace:
     parser.add_argument('--watermark-opacity', required=False, help='Set watermark opacity, 0-1', type=float)
     parser.add_argument('--limit', required=False, help='Max images to download', type=int, default=0)
     parser.add_argument('--delete-missing', help='Delete images not found in album', action="store_true")
+    parser.add_argument('--sort-order', help='One of ', choices=Downloader.get_sort_keys(), default='natural')
+    parser.add_argument('--sort-reverse', help='Reverse sort order', action='store_true')
     args = parser.parse_args()
     if args.watermark_opacity and not args.watermark_file:
         print('--watermark-opacity is invalid without --apply-watermark')
@@ -81,7 +83,14 @@ def run_cli() -> None:
         print(f'Output dir {output_dir} did not exist, creating it')
         Path(output_dir).mkdir(parents=True)
 
-    downloader.fetch_albums(args.album_id.split(','), output_dir, limit=args.limit, delete=args.delete_missing)
+    downloader.fetch_albums(
+        args.album_id.split(','),
+        output_dir,
+        limit=args.limit,
+        sort=args.sort_order,
+        reverse=args.sort_reverse,
+        delete=args.delete_missing
+    )
     print('All done')
 
 

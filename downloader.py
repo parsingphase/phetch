@@ -2,20 +2,102 @@
 Class file for Downloader
 """
 from pathlib import Path
+from random import sample
 from time import sleep
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Literal, Optional
 
 import requests
 from pathvalidate import sanitize_filename
 from typing_extensions import TypedDict
 
-Photo = TypedDict('Photo', {'url': str, 'local_file': str})
+Photo = TypedDict('Photo', {'url': str, 'local_file': str, 'title': str, 'taken': str})
+PhotoKey = Literal['url', 'local_file', 'title', 'taken']
+
+
+# Sample Photo response:
+# {'id': '50653354368', 'secret': '61b20f2e69', 'server': '65535', 'farm': 66, 'title': 'Red-eared slider',
+#  'isprimary': '0', 'ispublic': 1, 'isfriend': 0, 'isfamily': 0, 'datetaken': '2020-11-27 12:39:13',
+#  'datetakengranularity': '0', 'datetakenunknown': '0',
+#  'url_o': 'https://live.staticflickr.com/65535/50653354368_f94bcc957f_o.jpg', 'height_o': 4640, 'width_o': 6960,
+#  'url_k': 'https://live.staticflickr.com/65535/50653354368_6b9562a359_k.jpg', 'height_k': 1365, 'width_k': 2048}
+
+
+# Set of "sort" functions; these actually subsample the list of fetched photos in a defined way
+def sort_natural(photos: List[Photo], limit: Optional[int] = None, reverse: bool = False) -> List[Photo]:
+    """
+    Don't actually sort, just use whatever order the Flickr API returned
+    :param reverse:
+    :param photos:
+    :param limit:
+    :return:
+    """
+    if reverse:
+        photos = photos[::-1]
+    return photos if limit is None else photos[:limit]
+
+
+def sort_random(photos: List[Photo], limit: Optional[int] = None, reverse: bool = False) -> List[Photo]:
+    """
+    Get a random selection of photos from the list
+    :param reverse:
+    :param photos:
+    :param limit:
+    :return:
+    """
+    photos = sample(photos, limit if limit is not None else len(photos))
+    if reverse:
+        photos = photos[::-1]  # nonsensical with random, but if they ask…
+    return photos
+
+
+def sort_by_key(
+        photos: List[Photo], key: PhotoKey, limit: Optional[int] = None, reverse: bool = False) -> List[Photo]:
+    """
+    Helper to sort photos by a given dict key
+    :param photos:
+    :param key:
+    :param limit:
+    :param reverse:
+    :return:
+    """
+    photos = sorted(photos, key=lambda d: d[key], reverse=reverse)
+    if limit is not None:
+        photos = photos[:limit]
+    return photos
+
+
+def sort_title(photos: List[Photo], limit: Optional[int] = None, reverse: bool = False) -> List[Photo]:
+    """
+    Sort photos by title
+    :param photos:
+    :param limit:
+    :param reverse:
+    :return:
+    """
+    return sort_by_key(photos, key='title', limit=limit, reverse=reverse)
+
+
+def sort_taken(photos: List[Photo], limit: Optional[int] = None, reverse: bool = False) -> List[Photo]:
+    """
+    Sort photos by date taken
+    :param photos:
+    :param limit:
+    :param reverse:
+    :return:
+    """
+    return sort_by_key(photos, key='taken', limit=limit, reverse=reverse)
 
 
 class Downloader:
     """
     Flickr album downloader
     """
+    sort_funcs = {
+        'natural': sort_natural,
+        'random': sort_random,
+        'alphabetical': sort_title,
+        'taken': sort_taken,
+    }
     preferred_size: Optional[str]
     post_download_callback: Optional[Callable[[str], None]]
 
@@ -42,9 +124,21 @@ class Downloader:
         self.post_download_callback = callback
         return self
 
-    def fetch_albums(self, albums: List[str], output: str, delete=False, limit: int = 0) -> None:
+    # FIXME consider making some of these instance settings
+    # pylint: disable=too-many-arguments
+    def fetch_albums(
+            self,
+            albums: List[str],
+            output: str,
+            sort: str = 'natural',
+            reverse: bool = False,
+            limit: Optional[int] = None,
+            delete: bool = False
+    ) -> None:
         """
         Fetch albums from an array of IDs to a shared output directory
+        :param reverse:
+        :param sort:
         :param delete: Remove local files with no remote equivalent
         :param limit: Download at most this many new images
         :param albums:
@@ -52,7 +146,10 @@ class Downloader:
         :return:
         """
         photos = self.scan_albums(albums)
-        self.fetch_photos(photos, output, limit)
+        if limit == 0:
+            limit = None
+        selected_photos = self.sort_funcs[sort](photos, limit, reverse)
+        self.fetch_photos(selected_photos, output)
         if delete:
             self.remove_local_without_remote(photos, local_dir=output)
 
@@ -71,7 +168,7 @@ class Downloader:
 
         return photo_list
 
-    def fetch_photos(self, photos: List[Photo], output_dir: str, limit: int = 0):
+    def fetch_photos(self, photos: List[Photo], output_dir: str):
         """
         Fetch up to a maximum number of images from the calculated list
         :param photos:
@@ -79,15 +176,11 @@ class Downloader:
         :param limit:
         :return:
         """
-        downloaded = 0
         for photo in photos:
             outfile = output_dir + '/' + photo['local_file']
             if not Path(outfile).exists():
                 self.download_image(photo['url'], outfile, True)
                 sleep(0.1)
-                downloaded += 1
-                if limit and (downloaded >= limit):
-                    break
 
     def local_filename_for_photo(self, photo, path: str = ""):
         """
@@ -139,7 +232,7 @@ class Downloader:
         """
         if verbose:
             print(f'Fetching {album_id}, page {page}')
-        extras = "url_o" + (",url_" + self.preferred_size if self.preferred_size else "")
+        extras = "date_taken,url_o" + (",url_" + self.preferred_size if self.preferred_size else "")
         photoset_response = self.flickr.photosets.getPhotos(
             photoset_id=album_id, extras=extras, page=page, media='photos'
         )
@@ -168,7 +261,12 @@ class Downloader:
                 if self.preferred_size and "url_" + self.preferred_size in album_photo:
                     photo_url = album_photo["url_" + self.preferred_size]
 
-                photo: Photo = {'url': photo_url, 'local_file': filename}
+                photo: Photo = {
+                    'url': photo_url,
+                    'local_file': filename,
+                    'title': album_photo['title'],
+                    'taken': album_photo['datetaken']
+                }
                 photos.append(photo)
 
             page += 1
@@ -192,3 +290,11 @@ class Downloader:
         for file in to_remove:
             print("Remove " + file.name + ", not found in photo list")
             file.unlink()
+
+    @classmethod
+    def get_sort_keys(cls) -> List[str]:
+        """
+        Report the available sort functions
+        :return:
+        """
+        return list(cls.sort_funcs.keys())
