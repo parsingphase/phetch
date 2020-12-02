@@ -4,11 +4,11 @@ Class file for Downloader
 from pathlib import Path
 from random import sample
 from time import sleep
-from typing import Any, Callable, List, Literal, Optional
+from typing import Any, Callable, List, Optional
 
 import requests
 from pathvalidate import sanitize_filename
-from typing_extensions import TypedDict
+from typing_extensions import Literal, TypedDict
 
 Photo = TypedDict('Photo', {'url': str, 'local_file': str, 'title': str, 'taken': str})
 PhotoKey = Literal['url', 'local_file', 'title', 'taken']
