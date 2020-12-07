@@ -11,8 +11,7 @@ import flickrapi
 from yaml import BaseLoader
 from yaml import load as yload
 
-from downloader import Downloader
-from watermarker import Watermarker
+from pictools import Downloader, Watermarker
 
 
 def parse_cli_args() -> argparse.Namespace:
