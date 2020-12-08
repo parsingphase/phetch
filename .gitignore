@@ -1,6 +1,5 @@
-flickr.yml
 download
-fetch_*.sh
+scripts/*
 __pycache__
 data
 .eggs

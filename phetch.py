@@ -11,7 +11,7 @@ from typing import Union
 
 import flickrapi
 
-from pictools import Downloader, Watermarker, load_config
+from pictools import FlickrReader, PhotoListFetcher, Watermarker, load_config
 
 
 def parse_cli_args() -> argparse.Namespace:
@@ -25,7 +25,8 @@ def parse_cli_args() -> argparse.Namespace:
         description='Download Flickr album images to a directory for use in screensavers, etc',
     )
     parser.add_argument('album_id', help='Numeric ID of album from Flickr URL. Can be a comma-separated list.')
-    parser.add_argument('output', help='Directory to save files to')
+    parser.add_argument('output', help='Directory to save files to', nargs='?')
+    parser.add_argument('--no-download', help="Don't download any files", required=False)
     parser.add_argument('--prefer-size-suffix', required=False, help='Preferred download size; see README.md',
                         dest='suffix')
     parser.add_argument('--apply-watermark', required=False, help='Add watermark to bottom right', type=str,
@@ -33,12 +34,16 @@ def parse_cli_args() -> argparse.Namespace:
     parser.add_argument('--watermark-opacity', required=False, help='Set watermark opacity, 0-1', type=float)
     parser.add_argument('--limit', required=False, help='Max images to download', type=int, default=0)
     parser.add_argument('--delete-missing', help='Delete images not found in album', action="store_true")
-    parser.add_argument('--sort-order', help='One of ', choices=Downloader.get_sort_keys(), default='natural')
+    parser.add_argument('--sort-order', help='One of ', choices=PhotoListFetcher.get_sort_keys(), default='natural')
     parser.add_argument('--sort-reverse', help='Reverse sort order', action='store_true')
     parser.add_argument('--save-photo-list', help='File to export JSON album index to')
     args = parser.parse_args()
     if args.watermark_opacity and not args.watermark_file:
         print('--watermark-opacity is invalid without --apply-watermark')
+        parser.print_usage()
+        sys.exit(1)
+    if not args.output and not args.no_download:
+        print('Must specify either output or --no-download')
         parser.print_usage()
         sys.exit(1)
     return args
@@ -63,9 +68,10 @@ def run_cli() -> None:
     :return:
     """
     args = parse_cli_args()
-    downloader = Downloader(init_flickr_client('./config.yml'))
+    flickr_reader = FlickrReader(init_flickr_client('./config.yml'))
+    downloader = PhotoListFetcher()
     if args.suffix:
-        downloader.set_preferred_size_suffix(args.suffix)
+        flickr_reader.set_preferred_size_suffix(args.suffix)
 
     if args.watermark_file:
         watermarker = Watermarker(args.watermark_file)
@@ -83,7 +89,7 @@ def run_cli() -> None:
     reverse = args.sort_reverse
     delete = args.delete_missing
 
-    photos = downloader.scan_albums(albums)
+    photos = flickr_reader.scan_albums(albums)
     selected_photos = downloader.order_photo_list(photos, sort, reverse, limit)
     downloader.fetch_photos(selected_photos, output_dir)
     if delete:

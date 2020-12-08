@@ -1,9 +1,6 @@
-from . import downloader
-from . import load_config as lc
-from . import watermarker
+from .flickr_reader import FlickrReader
+from .load_config import load_config
+from .photo_list_fetcher import PhotoListFetcher
+from .watermarker import Watermarker
 
-Downloader = downloader.Downloader
-Watermarker = watermarker.Watermarker
-load_config = lc.load_config
-
-__all__ = ['Downloader', 'Watermarker', 'load_config']
+__all__ = ['FlickrReader','PhotoListFetcher', 'Watermarker', 'load_config']
