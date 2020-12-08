@@ -42,10 +42,15 @@ def parse_cli_args() -> argparse.Namespace:
         print('--watermark-opacity is invalid without --apply-watermark')
         parser.print_usage()
         sys.exit(1)
-    if not args.output and not args.no_download:
-        print('Must specify either output or --no-download')
+    if (not args.output and not args.no_download) or (args.output and args.no_download):
+        print('Must specify either output or --no-download, but not both')
         parser.print_usage()
         sys.exit(1)
+    if args.no_download and (args.watermark_file or args.limit):
+        print("Can't watermark or limit when not downloading")
+        parser.print_usage()
+        sys.exit(1)
+
     return args
 
 
@@ -69,30 +74,31 @@ def run_cli() -> None:
     """
     args = parse_cli_args()
     flickr_reader = FlickrReader(init_flickr_client('./config.yml'))
-    downloader = PhotoListFetcher()
     if args.suffix:
         flickr_reader.set_preferred_size_suffix(args.suffix)
 
-    if args.watermark_file:
-        watermarker = Watermarker(args.watermark_file)
-        if args.watermark_opacity:
-            watermarker.set_watermark_opacity(args.watermark_opacity)
-        downloader.set_post_download_callback(watermarker.mark_in_place)
+    albums = args.album_id.split(',')
+    photos = flickr_reader.scan_albums(albums)
 
     output_dir = args.output.rstrip('/')
-    ensure_dir(output_dir)
 
-    albums = args.album_id.split(',')
+    downloader = PhotoListFetcher()
+    if not args.no_download:
+        if args.watermark_file:
+            watermarker = Watermarker(args.watermark_file)
+            if args.watermark_opacity:
+                watermarker.set_watermark_opacity(args.watermark_opacity)
+            downloader.set_post_download_callback(watermarker.mark_in_place)
 
-    limit = args.limit
-    sort = args.sort_order
-    reverse = args.sort_reverse
-    delete = args.delete_missing
+        limit = args.limit
+        sort = args.sort_order
+        reverse = args.sort_reverse
 
-    photos = flickr_reader.scan_albums(albums)
-    selected_photos = downloader.order_photo_list(photos, sort, reverse, limit)
-    downloader.fetch_photos(selected_photos, output_dir)
-    if delete:
+        ensure_dir(output_dir)
+        selected_photos = downloader.order_photo_list(photos, sort, reverse, limit)
+        downloader.fetch_photos(selected_photos, output_dir)
+
+    if args.delete_missing:
         downloader.remove_local_without_remote(photos, local_dir=output_dir)
 
     photo_list = args.save_photo_list
