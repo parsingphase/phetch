@@ -17,10 +17,10 @@ def parse_cli_args() -> argparse.Namespace:
         Namespace of provided arguments
     """
     parser = argparse.ArgumentParser(
-        description='Download Flickr album images to a directory for use in screensavers, etc',
+        description='Watermark images in a directory, saved to a /watermarks subdirectory',
     )
     parser.add_argument('dir', help='Directory containing files to watermark')
-    parser.add_argument('--limit', required=False, help='Max images to download', type=int, default=0)
+    parser.add_argument('--limit', required=False, help='Max images to process', type=int, default=0)
     parser.add_argument('--resize', required=False, help='Resize to fit box', type=int, dest='max_edge')
     args = parser.parse_args()
     return args
