@@ -1,6 +1,7 @@
 """
 Class file for Watermarker
 """
+from os import PathLike
 from typing import Tuple
 
 from PIL import Image, ImageStat
@@ -50,7 +51,7 @@ class Watermarker:
         :param opacity:
         :return:
         """
-        self.watermark_opacity = opacity
+        self.watermark_opacity = float(opacity)
 
     def mark_in_place(self, image_file_path: str) -> None:
         """
@@ -60,10 +61,29 @@ class Watermarker:
         :return:
         """
         image: ImageFile = Image.open(image_file_path)
-        image_file = self.watermark_image(image)
+        image = self.watermark_image(image)
         # PIL throws a lot of data away on save by default. Preserve it instead!
-        image_file.save(
+        image.save(
             image_file_path,
+            quality=95,
+            icc_profile=image.info['icc_profile'] if 'icc_profile' in image.info else None,
+            exif=image.info["exif"],
+            subsampling='4:4:4'
+        )
+
+    def copy_with_watermark(self, input_file: str, output_file: str) -> None:
+        """
+        Apply the loaded watermark to the specified image and save it
+
+        :param output_file:
+        :param input_file:
+        :return:
+        """
+        image: ImageFile = Image.open(input_file)
+        image = self.watermark_image(image)
+        # PIL throws a lot of data away on save by default. Preserve it instead!
+        image.save(
+            output_file,
             quality=95,
             icc_profile=image.info['icc_profile'] if 'icc_profile' in image.info else None,
             exif=image.info["exif"],

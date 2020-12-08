@@ -8,10 +8,8 @@ import sys
 from pathlib import Path
 
 import flickrapi
-from yaml import BaseLoader
-from yaml import load as yload
 
-from pictools import Downloader, Watermarker
+from pictools import Downloader, Watermarker, load_config
 
 
 def parse_cli_args() -> argparse.Namespace:
@@ -49,12 +47,7 @@ def init_flickr_client(config_file: str):
     :param config_file:
     :return:
     """
-    config_path = Path(config_file)
-    if not config_path.exists():
-        print(f'Configfile {config_file} not found')
-        sys.exit(1)
-
-    config = yload(config_path.read_text(), Loader=BaseLoader)
+    config = load_config(config_file)['flickr']
 
     flickr = flickrapi.FlickrAPI(config['api_key'], config['api_secret'], format='parsed-json')
 
@@ -67,7 +60,7 @@ def run_cli() -> None:
     :return:
     """
     args = parse_cli_args()
-    downloader = Downloader(init_flickr_client('./flickr.yml'))
+    downloader = Downloader(init_flickr_client('./config.yml'))
     if args.suffix:
         downloader.set_preferred_size_suffix(args.suffix)
 
