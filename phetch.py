@@ -4,8 +4,10 @@ Fetch one or more Flickr albums. Run with --help for details
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
+from typing import Union
 
 import flickrapi
 
@@ -33,6 +35,7 @@ def parse_cli_args() -> argparse.Namespace:
     parser.add_argument('--delete-missing', help='Delete images not found in album', action="store_true")
     parser.add_argument('--sort-order', help='One of ', choices=Downloader.get_sort_keys(), default='natural')
     parser.add_argument('--sort-reverse', help='Reverse sort order', action='store_true')
+    parser.add_argument('--save-photo-list', help='File to export JSON album index to')
     args = parser.parse_args()
     if args.watermark_opacity and not args.watermark_file:
         print('--watermark-opacity is invalid without --apply-watermark')
@@ -71,19 +74,43 @@ def run_cli() -> None:
         downloader.set_post_download_callback(watermarker.mark_in_place)
 
     output_dir = args.output.rstrip('/')
-    if not Path(output_dir).is_dir():
-        print(f'Output dir {output_dir} did not exist, creating it')
-        Path(output_dir).mkdir(parents=True)
+    ensure_dir(output_dir)
 
-    downloader.fetch_albums(
-        args.album_id.split(','),
-        output_dir,
-        limit=args.limit,
-        sort=args.sort_order,
-        reverse=args.sort_reverse,
-        delete=args.delete_missing
-    )
+    albums = args.album_id.split(',')
+
+    limit = args.limit
+    sort = args.sort_order
+    reverse = args.sort_reverse
+    delete = args.delete_missing
+
+    photos = downloader.scan_albums(albums)
+    selected_photos = downloader.order_photo_list(photos, sort, reverse, limit)
+    downloader.fetch_photos(selected_photos, output_dir)
+    if delete:
+        downloader.remove_local_without_remote(photos, local_dir=output_dir)
+
+    photo_list = args.save_photo_list
+    if photo_list:
+        ensure_dir(Path(photo_list).parent)
+        with open(photo_list, 'w') as json_out:
+            json.dump(photos, json_out)
+            print(f"Wrote file list to {photo_list}")
+
     print('All done')
+
+
+def ensure_dir(target_dir: Union[Path, str]):
+    """
+    Make sure that a required directory exists
+    :param target_dir:
+    :return:
+    """
+    target = Path(target_dir)
+    if not target.is_dir():
+        if target.exists():
+            raise FileExistsError(f"{target_dir} exists but is not a directory")
+        print(f'{target_dir} did not exist, creating it')
+        target.mkdir(parents=True)
 
 
 if __name__ == '__main__':

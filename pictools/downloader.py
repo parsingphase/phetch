@@ -146,12 +146,26 @@ class Downloader:
         :return:
         """
         photos = self.scan_albums(albums)
-        if limit == 0:
-            limit = None
-        selected_photos = self.sort_funcs[sort](photos, limit, reverse)
+        selected_photos = self.order_photo_list(photos, sort, reverse, limit)
         self.fetch_photos(selected_photos, output)
         if delete:
             self.remove_local_without_remote(photos, local_dir=output)
+
+    def order_photo_list(self, photos: List[Photo], sort: str, reverse: bool, limit) -> List[Photo]:
+        """
+        Order a provided photo list according to the required algorithm and constraints
+        :param photos:
+        :param sort:
+        :param reverse:
+        :param limit:
+        :return:
+        """
+        if sort not in self.sort_funcs:
+            raise KeyError(f"No such sort function: {sort}")
+        if limit == 0:
+            limit = None
+        selected_photos = self.sort_funcs[sort](photos, limit, reverse)
+        return selected_photos
 
     def scan_albums(self, albums: List[str]) -> List[Photo]:
         """
