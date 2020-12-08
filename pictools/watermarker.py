@@ -1,11 +1,27 @@
 """
 Class file for Watermarker
 """
-from os import PathLike
-from typing import Tuple
+from typing import Optional, Tuple
 
 from PIL import Image, ImageStat
 from PIL.ImageFile import ImageFile
+
+
+def standard_save(image: Image, image_file_path: str):
+    """
+    PIL throws a lot of data away on save by default. Preserve it instead!
+
+    :param image:
+    :param image_file_path:
+    :return:
+    """
+    image.save(
+        image_file_path,
+        quality=95,
+        icc_profile=image.info['icc_profile'] if 'icc_profile' in image.info else None,
+        exif=image.info["exif"],
+        subsampling='4:4:4'
+    )
 
 
 class Watermarker:
@@ -62,33 +78,29 @@ class Watermarker:
         """
         image: ImageFile = Image.open(image_file_path)
         image = self.watermark_image(image)
-        # PIL throws a lot of data away on save by default. Preserve it instead!
-        image.save(
-            image_file_path,
-            quality=95,
-            icc_profile=image.info['icc_profile'] if 'icc_profile' in image.info else None,
-            exif=image.info["exif"],
-            subsampling='4:4:4'
-        )
+        standard_save(image, image_file_path)
 
-    def copy_with_watermark(self, input_file: str, output_file: str) -> None:
+    def copy_with_watermark(self, input_file: str, output_file: str, max_edge: Optional[int] = None) -> None:
         """
         Apply the loaded watermark to the specified image and save it
 
+        :param max_edge:
         :param output_file:
         :param input_file:
         :return:
         """
         image: ImageFile = Image.open(input_file)
+        if max_edge is not None:
+            if image.width > image.height:
+                ratio = max_edge / image.width
+                size = (max_edge, round(image.height * ratio))
+            else:
+                ratio = max_edge / image.height
+                size = (round(image.width * ratio), max_edge)
+            image = image.resize(size, Image.LANCZOS)
+
         image = self.watermark_image(image)
-        # PIL throws a lot of data away on save by default. Preserve it instead!
-        image.save(
-            output_file,
-            quality=95,
-            icc_profile=image.info['icc_profile'] if 'icc_profile' in image.info else None,
-            exif=image.info["exif"],
-            subsampling='4:4:4'
-        )
+        standard_save(image, output_file)
 
     def watermark_image(self, image: ImageFile) -> ImageFile:
         """

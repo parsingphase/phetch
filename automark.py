@@ -21,7 +21,7 @@ def parse_cli_args() -> argparse.Namespace:
     )
     parser.add_argument('dir', help='Directory containing files to watermark')
     parser.add_argument('--limit', required=False, help='Max images to download', type=int, default=0)
-    parser.add_argument('--delete-missing', help='Delete images not found in album', action="store_true")
+    parser.add_argument('--resize', required=False, help='Resize to fit box', type=int, dest='max_edge')
     args = parser.parse_args()
     return args
 
@@ -48,10 +48,10 @@ def run_cli() -> None:
     for image in source_files:
         output = output_dir / image.name
         if output.exists():
-            print(f"Target exists: {output}")
+            pass
         else:
             print(f"Watermarking {image} => {output}")
-            watermarker.copy_with_watermark(str(image), str(output))
+            watermarker.copy_with_watermark(str(image), str(output), args.max_edge)
             done += 1
             if args.limit and (done >= args.limit):
                 break
