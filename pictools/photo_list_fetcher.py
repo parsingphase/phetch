@@ -8,7 +8,7 @@ from typing import Callable, List, Optional
 
 import requests
 
-from pictools.types import Photo, PhotoKey
+from .types import Photo, PhotoKey
 
 # Sample Photo response:
 # {'id': '50653354368', 'secret': '61b20f2e69', 'server': '65535', 'farm': 66, 'title': 'Red-eared slider',
