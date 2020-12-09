@@ -5,3 +5,4 @@ data
 .eggs
 dist
 config.yml
+build/fetcher_distro_scripts/*.sh

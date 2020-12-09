@@ -1,0 +1,60 @@
+#!/bin/bash
+
+TARGET="DESTINATION_DIRECTORY"
+PROVIDER="CONTACT INFO"
+JSON_PATH="URL_OR_FILE"
+
+get_script_dir () {
+    SOURCE="${BASH_SOURCE[0]}"
+    SOURCE_DIR=$( dirname "$SOURCE" )
+    SOURCE_DIR=$(cd -P "${SOURCE_DIR}" && pwd)
+    echo "${SOURCE_DIR}"
+}
+
+cd "$( get_script_dir )" || exit 1
+
+echo
+echo "####################################################>"
+echo "Checking assumptions about your environment"
+echo "<####################################################"
+
+which python3 2>&1 > /dev/null
+PY_FOUND=$?
+FAIL=""
+
+if [[ "${PY_FOUND}" == "0" ]]; then
+  echo "Found the python3 interpreter"
+else
+  echo "Can't find the python3 interpreter"
+  FAIL=1
+fi
+echo
+
+if [[ ! -d "$TARGET" ]]; then
+    echo "'$TARGET' does not exist - can't put images there"
+    echo
+    FAIL=1
+fi
+
+if [[ "${FAIL}" == "1" ]]; then
+  echo "####################################################>"
+  echo "Can't fix this automatically, let $PROVIDER know"
+  echo "<####################################################"
+  echo
+
+  exit 1
+fi
+
+echo "####################################################>"
+echo "Searching for new files for download that are not present in"
+echo " $TARGET"
+echo "<####################################################"
+echo
+python3 ./fetcher/fetch_from_json.py "$JSON_PATH" "$TARGET"
+
+echo
+echo "####################################################>"
+echo "All done… you can now close this window"
+echo "If there were any errors, let $PROVIDER know!"
+echo "<####################################################"
+echo
