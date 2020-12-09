@@ -147,6 +147,9 @@ class PhotoListFetcher:
         :param outfile:
         :return:
         """
+        suffix = Path(outfile).suffix.lower()
+        if suffix not in ['.jpg', '.jpeg']:
+            raise ValueError(f"Non-JPG filename '{outfile}' ({suffix}) found, aborting as a precaution")
         response = requests.get(url)
         open(outfile, 'wb').write(response.content)
         if verbose:
