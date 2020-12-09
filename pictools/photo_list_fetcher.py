@@ -148,9 +148,12 @@ class PhotoListFetcher:
         :return:
         """
         suffix = Path(outfile).suffix.lower()
-        if suffix not in ['.jpg', '.jpeg']:
+        if suffix not in ['.jpg', '.jpeg', '.gif', '.png']:
             raise ValueError(f"Non-JPG filename '{outfile}' ({suffix}) found, aborting as a precaution")
         response = requests.get(url)
+        content_type = response.headers['Content-Type'].split(';')[0]
+        if content_type.split('/')[0].lower() != 'image':
+            raise ValueError(f"Non-image type ({content_type}) declared by server, aborting as a precaution")
         open(outfile, 'wb').write(response.content)
         if verbose:
             print(f'{url} => {outfile}')
