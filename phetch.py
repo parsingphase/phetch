@@ -26,7 +26,7 @@ def parse_cli_args() -> argparse.Namespace:
     )
     parser.add_argument('album_id', help='Numeric ID of album from Flickr URL. Can be a comma-separated list.')
     parser.add_argument('output', help='Directory to save files to', nargs='?')
-    parser.add_argument('--no-download', help="Don't download any files", required=False)
+    parser.add_argument('--no-download', help="Don't download any files", action='store_true')
     parser.add_argument('--prefer-size-suffix', required=False, help='Preferred download size; see README.md',
                         dest='suffix')
     parser.add_argument('--apply-watermark', required=False, help='Add watermark to bottom right', type=str,
@@ -54,7 +54,7 @@ def parse_cli_args() -> argparse.Namespace:
     return args
 
 
-def init_flickr_client(config_file: str):
+def init_flickr_client(config_file: str) -> flickrapi.FlickrAPI:
     """
     Initialise and return flickr client library using specified config file
     :param config_file:
@@ -80,10 +80,9 @@ def run_cli() -> None:
     albums = args.album_id.split(',')
     photos = flickr_reader.scan_albums(albums)
 
-    output_dir = args.output.rstrip('/')
-
     downloader = PhotoListFetcher()
     if not args.no_download:
+        output_dir = args.output.rstrip('/')
         if args.watermark_file:
             watermarker = Watermarker(args.watermark_file)
             if args.watermark_opacity:
@@ -98,8 +97,8 @@ def run_cli() -> None:
         selected_photos = downloader.order_photo_list(photos, sort, reverse, limit)
         downloader.fetch_photos(selected_photos, output_dir)
 
-    if args.delete_missing:
-        downloader.remove_local_without_remote(photos, local_dir=output_dir)
+        if args.delete_missing:
+            downloader.remove_local_without_remote(photos, local_dir=output_dir)
 
     photo_list = args.save_photo_list
     if photo_list:

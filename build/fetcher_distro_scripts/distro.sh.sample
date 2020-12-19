@@ -26,6 +26,7 @@ if [[ "${PY_FOUND}" == "0" ]]; then
   echo "Found the python3 interpreter"
 else
   echo "Can't find the python3 interpreter"
+  echo "You may need to install this from https://www.python.org/downloads/"
   FAIL=1
 fi
 echo
