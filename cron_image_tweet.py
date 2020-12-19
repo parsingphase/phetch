@@ -9,7 +9,8 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Generator, List, Optional, TypedDict, cast
+from typing import Generator, List, Optional, cast
+from typing_extensions import TypedDict
 
 import flickrapi
 import pendulum
