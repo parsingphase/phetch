@@ -17,7 +17,7 @@ from pictools import load_config
 ScheduledId = TypedDict('ScheduledId', {'photo_id': str, 'date_str': str})
 SimpleTweet = TypedDict('SimpleTweet', {'text': str, 'media': str})
 
-# HASHTAG = '#birdoftheday'
+# HASHTAG = '#dailybird'
 HASHTAG = '#test'
 
 
@@ -130,9 +130,9 @@ def run_cli() -> None:
         tweet: SimpleTweet = build_tweet_by_flickr_photo_id(due_photo['photo_id'])
         twitter_api = init_twitter_client('./config.yml')
         status = twitter_api.PostUpdate(status=tweet['text'], media=tweet['media'])
-        if 'created_at' in status:
-            print(f"Posted successfully at {status['created_at']}")
-            print(status['media']['0']['expanded_url'])
+        if status:
+            print(f"Posted successfully at {status.created_at_in_seconds}")
+            print(status)
         else:
             print("Possible post failure?")
             print(status)
