@@ -5,3 +5,10 @@ flickr:
 watermark:
     file:
     opacity:
+
+twitter:
+  api_key: NN - Consumer API keys
+  api_secret: NN
+
+  access_token_key: OAUTH
+  access_token_secret: OAUTH

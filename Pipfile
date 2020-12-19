@@ -16,6 +16,7 @@ pathvalidate = "*"
 pyyaml = "*"
 pillow = "*"
 pendulum = "*"
+python-twitter = "*"
 
 [requires]
 python_version = "3.8"
