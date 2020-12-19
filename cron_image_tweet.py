@@ -42,8 +42,9 @@ def parse_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Create tweet with image from encoded input',
     )
-    parser.add_argument('--source-flickr-download-dir', help='Directory of coded flickr downloads to use as source',
-                        required=True)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--source-flickr-download-dir', help='Directory of coded flickr downloads to use as source')
+    group.add_argument('--source-flickr-file-list', help='File containing list of Flickr photo dates/ids')
     parser.add_argument('--dry-run', help="Prepare the tweet but don't send it", action='store_true')
     args = parser.parse_args()
 
@@ -63,6 +64,25 @@ def scan_path_for_coded_filenames(source_dir: Path) -> List[ScheduledId]:
         match = re.match(pattern, candidate.name)
         if match:
             schedule.append(cast(ScheduledId, match.groupdict()))
+
+    return schedule
+
+
+def scan_file_for_coded_filenames(source_file: Path) -> List[ScheduledId]:
+    """
+    Parse a text file (provided as a Path) for candidates for posting
+    :param source_file:
+    :return:
+    """
+    pattern = r"^(?P<date_str>\d{8})_.*_(?P<photo_id>\d{11,12})(\.jpg)?$"
+    contents = source_file.read_text('UTF-8').strip()
+    candidates = contents.split("\n")
+    schedule: List[ScheduledId] = []
+    for candidate in candidates:
+        match = re.match(pattern, candidate.strip())
+        if match:
+            matches = match.groupdict()
+            schedule.append(cast(ScheduledId, matches))
 
     return schedule
 
@@ -164,11 +184,19 @@ def run_cli() -> None:
     :return:
     """
     args = parse_cli_args()
-    source_dir = Path(args.source_flickr_download_dir)
-    if not source_dir.exists():
-        raise FileExistsError(Path.name + 'missing')
+    if args.source_flickr_download_dir:
+        source_dir = Path(args.source_flickr_download_dir)
+        if not source_dir.exists():
+            raise FileExistsError(str(source_dir) + ' missing')
 
-    schedule = scan_path_for_coded_filenames(source_dir)
+        schedule = scan_path_for_coded_filenames(source_dir)
+    elif args.source_flickr_file_list:
+        source_file = Path(args.source_flickr_file_list)
+        if not source_file.exists():
+            raise FileExistsError(str(source_file) + ' missing')
+        schedule = scan_file_for_coded_filenames(source_file)
+    else:
+        raise NotImplementedError("--source mechanism selected hasn't been coded yet!")
 
     assert_schedule_unique(schedule)
     due_photo = get_due_item_from_schedule(schedule)
