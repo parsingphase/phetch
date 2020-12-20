@@ -28,6 +28,8 @@ def parse_cli_args() -> argparse.Namespace:
         description='List photos found in multiple flickr albums',
     )
     parser.add_argument('album_id', help='Numeric IDs of album from Flickr URL', nargs='+')
+    parser.add_argument('--unique-titles', help='Output only one row per title', action='store_true')
+    parser.add_argument('--csv', help='Output as CSV', action='store_true')
     args = parser.parse_args()
     if len(args.album_id) < 2:
         print('Must list at least 2 albums')
@@ -36,7 +38,7 @@ def parse_cli_args() -> argparse.Namespace:
     return args
 
 
-def photos_union(list_a: List[Photo], list_b: List[Photo]):
+def photos_intersection(list_a: List[Photo], list_b: List[Photo]):
     """
     Return photos in both lists
     :param list_a:
@@ -44,6 +46,29 @@ def photos_union(list_a: List[Photo], list_b: List[Photo]):
     :return:
     """
     filtered = [photo for photo in list_a if photo in list_b]
+    return filtered
+
+
+def unique_titles(photos: List[Photo], defer_remainder=False) -> List[Photo]:
+    """
+    Filter out multiple photos of the same title, keeping only the first
+    :param defer_remainder: Whether to re-uniquify non-unique photos and append them
+    :param photos:
+    :return:
+    """
+    seen_titles = []
+    filtered = []
+    deferred = []
+    for photo in photos:
+        if photo['title'] in seen_titles:
+            deferred.append(photo)
+        else:
+            filtered.append(photo)
+            seen_titles.append(photo['title'])
+
+    if defer_remainder and len(deferred) > 0:
+        filtered = filtered + unique_titles(deferred, True)
+
     return filtered
 
 
@@ -60,10 +85,12 @@ def run_cli() -> None:
 
     filtered = albums.pop()
     for album in albums:
-        filtered = photos_union(filtered, album)
+        filtered = photos_intersection(filtered, album)
+
+    filtered = unique_titles(filtered, not args.unique_titles)
 
     # report_files(filtered)
-    shuffle_and_prepend_date(filtered, date.today(), True)
+    shuffle_and_prepend_date(filtered, date.today(), args.csv)
 
 
 def report_files(filtered: List[Photo]):
@@ -94,8 +121,8 @@ def shuffle_and_prepend_date(filtered: List[Photo], start: date, as_csv: bool = 
         target_date = today.strftime('%Y%m%d')
         if csv_writer:
             matched = re.search(r"_(\d{11,12})\.", filename)
-            photo_id = matched.group(1) if matched else 'n-a'
-            csv_writer.writerow([target_date, filename, PHOTO_URL_PREFIX + photo_id])
+            photo_id = matched.group(1) if matched else None
+            csv_writer.writerow([target_date, filename, PHOTO_URL_PREFIX + photo_id if photo_id else ''])
         else:
             print(target_date + '_' + filename)
         today = today + timedelta(days=1)
