@@ -9,7 +9,8 @@ import sys
 from pathlib import Path
 from typing import Union
 
-from pictools import FlickrReader, PhotoListFetcher, Watermarker, load_config, init_flickr_client
+from image_processors import Watermarker
+from phetch_tools import FlickrReader, PhotoListFetcher, init_flickr_client
 
 
 def parse_cli_args() -> argparse.Namespace:

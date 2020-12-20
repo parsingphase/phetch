@@ -10,7 +10,7 @@ from pathlib import Path
 
 import requests
 
-from pictools import PhotoListFetcher
+from phetch_tools import PhotoListFetcher
 
 
 def parse_cli_args() -> argparse.Namespace:

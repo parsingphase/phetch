@@ -11,8 +11,8 @@ from datetime import date, datetime, timedelta
 from typing import List
 
 from phetch import init_flickr_client
-from pictools import FlickrReader
-from pictools.types import Photo
+from phetch_tools import FlickrReader
+from phetch_tools.types import Photo
 
 PHOTO_URL_PREFIX = "https://www.flickr.com/photos/parsingphase/"
 

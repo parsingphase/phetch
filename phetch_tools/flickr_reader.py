@@ -5,7 +5,7 @@ from typing import Any, List, Optional
 
 from pathvalidate import sanitize_filename
 
-from pictools.types import Photo
+from phetch_tools.types import Photo
 
 # Sample Photo response:
 # {'id': '50653354368', 'secret': '61b20f2e69', 'server': '65535', 'farm': 66, 'title': 'Red-eared slider',
