@@ -117,7 +117,7 @@ def get_due_item_from_schedule(schedule: List[ScheduledId]) -> Optional[Schedule
     """
     today_string = get_today_date_str()
     today_items = [item for item in schedule if item['date_str'] == today_string]
-    return today_items.pop()
+    return today_items.pop() if len(today_items) else None
 
 
 def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTweet:
