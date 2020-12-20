@@ -3,12 +3,18 @@
 Fetch photos found in multiple Flickr albums. Run with --help for details
 """
 import argparse
+import csv
+import random
+import re
 import sys
+from datetime import date, timedelta
 from typing import List
 
 from phetch import init_flickr_client
 from pictools import FlickrReader
 from pictools.types import Photo
+
+PHOTO_URL_PREFIX = "https://www.flickr.com/photos/parsingphase/"
 
 
 def parse_cli_args() -> argparse.Namespace:
@@ -37,22 +43,40 @@ def photos_union(list_a: List[Photo], list_b: List[Photo]):
 
 def run_cli():
     args = parse_cli_args()
-    print(args.album_id)
     album_ids: List = args.album_id
     flickr_reader = FlickrReader(init_flickr_client('./config.yml'))
+    flickr_reader.set_silent(True)
     albums = [flickr_reader.scan_album(album_id) for album_id in album_ids]
 
     filtered = albums.pop()
     for album in albums:
         filtered = photos_union(filtered, album)
 
-    report_files(filtered)
+    # report_files(filtered)
+    shuffle_and_prepend_date(filtered, date.today(), True)
 
 
 def report_files(filtered: List[Photo]):
     filenames = [photo['local_file'] for photo in filtered]
     filenames.sort()
     print("\n".join(filenames))
+
+
+def shuffle_and_prepend_date(filtered: List[Photo], start: date, as_csv: bool = False):
+    csv_writer = csv.writer(sys.stdout) if as_csv else None
+
+    filenames = [photo['local_file'] for photo in filtered]
+    random.shuffle(filenames)
+    today = start
+    for filename in filenames:
+        target_date = today.strftime('%Y%m%d')
+        if csv_writer:
+            matched = re.search(r"_(\d{11,12})\.", filename)
+            photo_id = matched.group(1)
+            csv_writer.writerow([target_date, filename, PHOTO_URL_PREFIX + photo_id])
+        else:
+            print(target_date + '_' + filename)
+        today = today + timedelta(days=1)
 
 
 if __name__ == '__main__':

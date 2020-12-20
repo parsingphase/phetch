@@ -7,6 +7,7 @@ from pathvalidate import sanitize_filename
 
 from pictools.types import Photo
 
+
 # Sample Photo response:
 # {'id': '50653354368', 'secret': '61b20f2e69', 'server': '65535', 'farm': 66, 'title': 'Red-eared slider',
 #  'isprimary': '0', 'ispublic': 1, 'isfriend': 0, 'isfamily': 0, 'datetaken': '2020-11-27 12:39:13',
@@ -24,6 +25,15 @@ class FlickrReader:
     def __init__(self, flickr_client: Any) -> None:
         self.preferred_size = None
         self.flickr = flickr_client
+        self.silent = False
+
+    def set_silent(self, silent):
+        """
+        Mute informational output
+        :param silent:
+        :return:
+        """
+        self.silent = silent
 
     def set_preferred_size_suffix(self, suffix: str) -> 'FlickrReader':
         """
@@ -73,7 +83,7 @@ class FlickrReader:
         photo_slug = str(sanitize_filename(photo_title)) + '_' if photo_title else ''
         return photo_slug.lower().replace(' ', '_')
 
-    def fetch_photoset_photos(self, album_id: str, page: int = 1, verbose: bool = False):
+    def fetch_photoset_photos(self, album_id: str, page: int = 1):
         """
         Fetch info about photos in a given photoset
         :param limit:
@@ -82,7 +92,7 @@ class FlickrReader:
         :param verbose:
         :return:
         """
-        if verbose:
+        if not self.silent:
             print(f'Fetching {album_id}, page {page}')
         extras = "date_taken,url_o" + (",url_" + self.preferred_size if self.preferred_size else "")
         photoset_response = self.flickr.photosets.getPhotos(
@@ -99,7 +109,8 @@ class FlickrReader:
         photos = []  # List[Photo]
         album_response = self.flickr.photosets.getInfo(photoset_id=album)
         album_title = album_response['photoset']['title']['_content']
-        print(f'Scanning album {album_title} ({album})')
+        if not self.silent:
+            print(f'Scanning album {album_title} ({album})')
 
         page = 1
         photoset_response = self.fetch_photoset_photos(album, page)
@@ -123,7 +134,8 @@ class FlickrReader:
 
             page += 1
             if page <= pages:
-                print(f' Fetch page {page}/{pages}')
+                if not self.silent:
+                    print(f' Fetch page {page}/{pages}')
                 photoset_response = self.fetch_photoset_photos(album, page)
 
         return photos
