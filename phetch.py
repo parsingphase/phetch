@@ -9,9 +9,7 @@ import sys
 from pathlib import Path
 from typing import Union
 
-import flickrapi
-
-from pictools import FlickrReader, PhotoListFetcher, Watermarker, load_config
+from pictools import FlickrReader, PhotoListFetcher, Watermarker, load_config, init_flickr_client
 
 
 def parse_cli_args() -> argparse.Namespace:
@@ -52,19 +50,6 @@ def parse_cli_args() -> argparse.Namespace:
         sys.exit(1)
 
     return args
-
-
-def init_flickr_client(config_file: str) -> flickrapi.FlickrAPI:
-    """
-    Initialise and return flickr client library using specified config file
-    :param config_file:
-    :return:
-    """
-    config = load_config(config_file)['flickr']
-
-    flickr = flickrapi.FlickrAPI(config['api_key'], config['api_secret'], format='parsed-json')
-
-    return flickr
 
 
 def run_cli() -> None:

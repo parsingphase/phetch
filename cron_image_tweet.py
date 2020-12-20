@@ -18,8 +18,7 @@ import twitter
 from dateutil.parser import parse
 from typing_extensions import TypedDict
 
-from phetch import init_flickr_client
-from pictools import load_config
+from pictools import load_config, init_flickr_client
 
 ScheduledId = TypedDict('ScheduledId', {'photo_id': str, 'date_str': str})
 SimpleTweet = TypedDict('SimpleTweet', {'text': str, 'media': str})

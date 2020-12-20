@@ -1,0 +1,7 @@
+requests
+flickrapi
+pyyaml
+pendulum
+python-twitter
+typing_extensions
+pathvalidate
