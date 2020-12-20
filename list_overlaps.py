@@ -7,7 +7,7 @@ import csv
 import random
 import re
 import sys
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from typing import List
 
 from phetch import init_flickr_client
@@ -28,6 +28,7 @@ def parse_cli_args() -> argparse.Namespace:
         description='List photos found in multiple flickr albums',
     )
     parser.add_argument('album_id', help='Numeric IDs of album from Flickr URL', nargs='+')
+    parser.add_argument('--from-date', help='Start date in YYYYmmdd format')
     parser.add_argument('--unique-titles', help='Output only one row per title', action='store_true')
     parser.add_argument('--csv', help='Output as CSV', action='store_true')
     args = parser.parse_args()
@@ -87,10 +88,12 @@ def run_cli() -> None:
     for album in albums:
         filtered = photos_intersection(filtered, album)
 
-    filtered = unique_titles(filtered, not args.unique_titles)
+    if args.unique_titles:
+        filtered = unique_titles(filtered, False)  # used as a pure uniqueness function here
 
     # report_files(filtered)
-    shuffle_and_prepend_date(filtered, date.today(), args.csv)
+    from_date = datetime.strptime(args.from_date, '%Y%m%d').date() if args.from_date else date.today()
+    shuffle_and_prepend_date(filtered, from_date, args.csv)
 
 
 def report_files(filtered: List[Photo]):
@@ -104,18 +107,21 @@ def report_files(filtered: List[Photo]):
     print("\n".join(filenames))
 
 
-def shuffle_and_prepend_date(filtered: List[Photo], start: date, as_csv: bool = False):
+def shuffle_and_prepend_date(photos: List[Photo], start: date, as_csv: bool = False):
     """
     Generate a random schedule on STDOUT
-    :param filtered:
+    :param photos:
     :param start:
     :param as_csv:
     :return:
     """
     csv_writer = csv.writer(sys.stdout) if as_csv else None
 
-    filenames = [photo['local_file'] for photo in filtered]
-    random.shuffle(filenames)
+    # Make the photos random, but not too random
+    random.shuffle(photos)
+    photos = unique_titles(photos, True)  # used to reduce clustering here
+
+    filenames = [photo['local_file'] for photo in photos]
     today = start
     for filename in filenames:
         target_date = today.strftime('%Y%m%d')
