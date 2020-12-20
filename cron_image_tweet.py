@@ -140,7 +140,7 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
     when = info['photo']['dates']['taken']
     title = info['photo']['title']['_content']
     when_date = parse(when)
-    friendly_date = pendulum.instance(when_date).format('Mo MMMM Y')  # type: ignore
+    friendly_date = pendulum.instance(when_date).format('Do MMMM Y')  # type: ignore
 
     text = f'{title}, {friendly_date} {hashtag}'
 
