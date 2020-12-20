@@ -223,7 +223,7 @@ def post_tweet_from_schedule(schedule: List[ScheduledId], hashtag: str = '', dry
         else:
             status = twitter_api.PostUpdate(status=tweet['text'], media=tweet['media'])
             if status:
-                print(f"Posted successfully at {status.created_at_in_seconds}")
+                print(f"Posted successfully at {status.created_at_in_seconds}: ", tweet)
                 print(status)
             else:
                 print("Possible post failure?")
