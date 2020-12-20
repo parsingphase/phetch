@@ -6,3 +6,4 @@ data
 dist
 config.yml
 build/fetcher_distro_scripts/*.sh
+potd_schedules

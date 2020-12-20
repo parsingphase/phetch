@@ -8,8 +8,9 @@ import argparse
 import re
 import sys
 from datetime import datetime
+from os import getenv
 from pathlib import Path
-from typing import Generator, List, Optional, cast
+from typing import Any, Generator, List, Optional, cast
 
 import flickrapi
 import pendulum
@@ -23,8 +24,7 @@ from pictools import load_config
 ScheduledId = TypedDict('ScheduledId', {'photo_id': str, 'date_str': str})
 SimpleTweet = TypedDict('SimpleTweet', {'text': str, 'media': str})
 
-# HASHTAG = '#dailybird'
-HASHTAG = '#test'
+DEFAULT_HASHTAG = '#test'
 
 
 class UniquenessError(Exception):
@@ -121,7 +121,7 @@ def get_due_item_from_schedule(schedule: List[ScheduledId]) -> Optional[Schedule
     return today_items.pop()
 
 
-def build_tweet_by_flickr_photo_id(photo_id: str) -> SimpleTweet:
+def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTweet:
     """
        - get k-size image URI -
          - https://www.flickr.com/services/api/flickr.photos.getSizes.html
@@ -129,6 +129,7 @@ def build_tweet_by_flickr_photo_id(photo_id: str) -> SimpleTweet:
        - get title, … : https://www.flickr.com/services/api/flickr.photos.getInfo.html
          - photo.title, photo.dates.taken
 
+    :param hashtag:
     :param photo_id:
     :return:
     """
@@ -142,7 +143,7 @@ def build_tweet_by_flickr_photo_id(photo_id: str) -> SimpleTweet:
     when_date = parse(when)
     friendly_date = pendulum.instance(when_date).format('Mo MMMM Y')  # type: ignore
 
-    text = f'{title}, {friendly_date} {HASHTAG}'
+    text = f'{title}, {friendly_date} {hashtag}'
 
     return {
         'text': text,
@@ -185,6 +186,8 @@ def run_cli() -> None:
     :return:
     """
     args = parse_cli_args()
+    dry_run = args.dry_run
+
     if args.source_flickr_download_dir:
         source_dir = Path(args.source_flickr_download_dir)
         if not source_dir.exists():
@@ -199,13 +202,24 @@ def run_cli() -> None:
     else:
         raise NotImplementedError("--source mechanism selected hasn't been coded yet!")
 
+    post_tweet_from_schedule(schedule, DEFAULT_HASHTAG, dry_run)
+
+
+def post_tweet_from_schedule(schedule: List[ScheduledId], hashtag: str = '', dry_run: bool = False):
+    """
+    Check for a due tweet, build and post it
+
+    :param hashtag:
+    :param schedule:
+    :param dry_run: If true, just report on what the tweet would contain
+    :return:
+    """
     assert_schedule_unique(schedule)
     due_photo = get_due_item_from_schedule(schedule)
-
     if due_photo:
-        tweet: SimpleTweet = build_tweet_by_flickr_photo_id(due_photo['photo_id'])
+        tweet: SimpleTweet = build_tweet_by_flickr_photo_id(due_photo['photo_id'], hashtag)
         twitter_api = init_twitter_client('./config.yml')
-        if args.dry_run:
+        if dry_run:
             print('Dry run: generated ', tweet)
         else:
             status = twitter_api.PostUpdate(status=tweet['text'], media=tweet['media'])
@@ -220,5 +234,27 @@ def run_cli() -> None:
         print("No tweet due today")
 
 
+# noinspection PyUnusedLocal
+# pylint: disable=unused-argument
+def lambda_handler(event: Any, context: Any):
+    """
+    Entrypoint for AWS lambda
+    :param event:
+    :param context:
+    :return:
+    """
+    source_file = getenv('POTD_SCHEDULE_FILE')
+    dry_run = bool(getenv('POTD_DRY_RUN'))
+    hashtag = getenv('POTD_HASHTAG', '')
+    if source_file is None:
+        print('POTD_SCHEDULE_FILE environmental variable must be defined')
+        sys.exit(1)
+    schedule = scan_file_for_coded_filenames(Path(source_file))
+    post_tweet_from_schedule(schedule, hashtag, dry_run)
+
+
 if __name__ == '__main__':
-    run_cli()
+    if sys.argv[1] == '--lambda':
+        lambda_handler(None, None)
+    else:
+        run_cli()
