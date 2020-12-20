@@ -37,11 +37,21 @@ def parse_cli_args() -> argparse.Namespace:
 
 
 def photos_union(list_a: List[Photo], list_b: List[Photo]):
+    """
+    Return photos in both lists
+    :param list_a:
+    :param list_b:
+    :return:
+    """
     filtered = [photo for photo in list_a if photo in list_b]
     return filtered
 
 
-def run_cli():
+def run_cli() -> None:
+    """
+    Run script at CLI
+    :return:
+    """
     args = parse_cli_args()
     album_ids: List = args.album_id
     flickr_reader = FlickrReader(init_flickr_client('./config.yml'))
@@ -57,12 +67,24 @@ def run_cli():
 
 
 def report_files(filtered: List[Photo]):
+    """
+    Report a sorted list of filenames
+    :param filtered:
+    :return:
+    """
     filenames = [photo['local_file'] for photo in filtered]
     filenames.sort()
     print("\n".join(filenames))
 
 
 def shuffle_and_prepend_date(filtered: List[Photo], start: date, as_csv: bool = False):
+    """
+    Generate a random schedule on STDOUT
+    :param filtered:
+    :param start:
+    :param as_csv:
+    :return:
+    """
     csv_writer = csv.writer(sys.stdout) if as_csv else None
 
     filenames = [photo['local_file'] for photo in filtered]
@@ -72,7 +94,7 @@ def shuffle_and_prepend_date(filtered: List[Photo], start: date, as_csv: bool = 
         target_date = today.strftime('%Y%m%d')
         if csv_writer:
             matched = re.search(r"_(\d{11,12})\.", filename)
-            photo_id = matched.group(1)
+            photo_id = matched.group(1) if matched else 'n-a'
             csv_writer.writerow([target_date, filename, PHOTO_URL_PREFIX + photo_id])
         else:
             print(target_date + '_' + filename)

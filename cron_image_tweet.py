@@ -10,12 +10,12 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Generator, List, Optional, cast
-from typing_extensions import TypedDict
 
 import flickrapi
 import pendulum
 import twitter
 from dateutil.parser import parse
+from typing_extensions import TypedDict
 
 from phetch import init_flickr_client
 from pictools import load_config

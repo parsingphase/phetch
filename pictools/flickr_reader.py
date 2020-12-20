@@ -7,7 +7,6 @@ from pathvalidate import sanitize_filename
 
 from pictools.types import Photo
 
-
 # Sample Photo response:
 # {'id': '50653354368', 'secret': '61b20f2e69', 'server': '65535', 'farm': 66, 'title': 'Red-eared slider',
 #  'isprimary': '0', 'ispublic': 1, 'isfriend': 0, 'isfamily': 0, 'datetaken': '2020-11-27 12:39:13',
@@ -27,13 +26,14 @@ class FlickrReader:
         self.flickr = flickr_client
         self.silent = False
 
-    def set_silent(self, silent):
+    def set_silent(self, silent: bool) -> 'FlickrReader':
         """
         Mute informational output
         :param silent:
         :return:
         """
         self.silent = silent
+        return self
 
     def set_preferred_size_suffix(self, suffix: str) -> 'FlickrReader':
         """
