@@ -26,6 +26,7 @@ fi
 DISTRO_FILE="${BUILD_DIR}/fetcher_distro_scripts/${DISTRO}.sh"
 
 if [[ -f "${DISTRO_FILE}" ]]; then
+  rm -rf "${DIST_DIR:?}/${DISTRO:?}"
   echo "${DISTRO}.sh exists, building ${DIST_DIR}/${DISTRO}"
 else
   echo "No such distro file ${DISTRO} in ${BUILD_DIR}/fetcher_distro_scripts"
@@ -40,7 +41,7 @@ rm -rf "${DIST_DIR:?}/${DISTRO:?}.zip"
 
 mkdir -p "${LIBDIR}/phetch_tools"
 cp fetch_from_json.py Pipfile "${LIBDIR}"
-cp -r phetch_tools "${LIBDIR}/phetch_tools"
+cp -r phetch_tools "${LIBDIR}"
 cp "${DISTRO_FILE}" "${DIST_DIR}/${DISTRO}/FetchNewImages.command"
 cp "${BUILD_DIR}/READ ME FIRST.pdf" "${DIST_DIR}/${DISTRO}"
 chmod u+x "${DIST_DIR}/${DISTRO}/FetchNewImages.command"

@@ -1,2 +1,5 @@
 typing_extensions
 requests
+pathvalidate
+flickrapi
+pyyaml
