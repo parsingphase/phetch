@@ -39,7 +39,7 @@ def run_cli() -> None:
         watermarker.set_watermark_opacity(config['watermark']['opacity'])
 
     source_dir = Path(args.dir.rstrip('/'))
-    output_dir = source_dir / ('watermarked' + '-' + str(args.max_edge) if args.max_edge else '')
+    output_dir = source_dir / ('watermarked' + ('-' + str(args.max_edge) if args.max_edge else ''))
     if not output_dir.is_dir():
         print(f'Output dir {output_dir} did not exist, creating it')
         output_dir.mkdir(parents=True)
