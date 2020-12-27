@@ -40,7 +40,7 @@ class Watermarker:
         self.long_edge_watermark_ratio = 0.14  # default
         self.long_edge_border_ratio = 0.01  # default
         self.watermark_opacity = 0.5  # default
-        self.watermark_brightness_threshold = 200  # default
+        self.watermark_brightness_threshold = 180  # default
 
     def __del__(self):
         self.watermark.close()
