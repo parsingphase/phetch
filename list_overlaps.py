@@ -8,8 +8,10 @@ import random
 import re
 import sys
 from datetime import date, datetime, timedelta
+from pathlib import Path
 from typing import List
 
+from cron_image_tweet import scan_file_for_coded_filenames
 from phetch import init_flickr_client
 from phetch_tools import FlickrReader
 from phetch_tools.types import Photo
@@ -30,6 +32,7 @@ def parse_cli_args() -> argparse.Namespace:
     parser.add_argument('album_id', help='Numeric IDs of album from Flickr URL', nargs='+')
     parser.add_argument('--from-date', help='Start date in YYYYmmdd format')
     parser.add_argument('--unique-titles', help='Output only one row per title', action='store_true')
+    parser.add_argument('--exclude-from-file', help='Exclude photos already listed in file')
     parser.add_argument('--csv', help='Output as CSV', action='store_true')
     args = parser.parse_args()
     if len(args.album_id) < 2:
@@ -73,6 +76,31 @@ def unique_titles(photos: List[Photo], defer_remainder=False) -> List[Photo]:
     return filtered
 
 
+def exclude_from_file(photos: List[Photo], exclusion_file: str) -> List[Photo]:
+    """
+
+    :param filtered:
+    :param exclusion_file:
+    :return:
+    """
+    exclusion_path = Path(exclusion_file)
+    if not exclusion_path.exists():
+        raise FileNotFoundError(f"{exclusion_file} not found")
+    exclusions = scan_file_for_coded_filenames(exclusion_path)
+    exclude_ids = [p['photo_id'] for p in exclusions]
+    filtered: List[Photo] = []
+
+    pattern = r"^(?P<description>\S+)_(?P<photo_id>\d{11,12})(\.jpg)?$"
+    for photo in photos:
+        match = re.match(pattern, photo['local_file'])
+        if match:
+            matches = match.groupdict()
+            if matches['photo_id'] not in exclude_ids:
+                filtered.append(photo)
+
+    return filtered
+
+
 def run_cli() -> None:
     """
     Run script at CLI
@@ -90,6 +118,9 @@ def run_cli() -> None:
 
     if args.unique_titles:
         filtered = unique_titles(filtered, False)  # used as a pure uniqueness function here
+
+    if args.exclude_from_file:
+        filtered = exclude_from_file(filtered, args.exclude_from_file)
 
     # report_files(filtered)
     from_date = datetime.strptime(args.from_date, '%Y%m%d').date() if args.from_date else date.today()
