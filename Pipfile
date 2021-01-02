@@ -17,6 +17,7 @@ pyyaml = "*"
 pillow = "*"
 pendulum = "*"
 python-twitter = "*"
+piexif = "*"
 
 [requires]
 python_version = "3.8"

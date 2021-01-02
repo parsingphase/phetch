@@ -1,11 +1,13 @@
 """
 Class file for FlickrReader
 """
+from random import randint
 from typing import Any, List, Optional
 
 from pathvalidate import sanitize_filename
 
 from phetch_tools.types import Photo
+
 
 # Sample Photo response:
 # {'id': '50653354368', 'secret': '61b20f2e69', 'server': '65535', 'farm': 66, 'title': 'Red-eared slider',
@@ -25,6 +27,7 @@ class FlickrReader:
         self.preferred_size = None
         self.flickr = flickr_client
         self.silent = False
+        self.random_title = False
 
     def set_silent(self, silent: bool) -> 'FlickrReader':
         """
@@ -33,6 +36,15 @@ class FlickrReader:
         :return:
         """
         self.silent = silent
+        return self
+
+    def set_random_title(self, random_title: bool) -> 'FlickrReader':
+        """
+        Mute informational output
+        :param silent:
+        :return:
+        """
+        self.random_title = random_title
         return self
 
     def set_preferred_size_suffix(self, suffix: str) -> 'FlickrReader':
@@ -119,6 +131,7 @@ class FlickrReader:
         while page <= pages:
             album_photos = photoset_response['photoset']['photo']
             for album_photo in album_photos:
+                prefix = str(randint(12345, 98765)) + ' ' if self.random_title else ''
                 filename = self.local_filename_for_photo(album_photo)
                 photo_url = album_photo["url_o"]
                 if self.preferred_size and "url_" + self.preferred_size in album_photo:
@@ -126,8 +139,8 @@ class FlickrReader:
 
                 photo: Photo = {
                     'url': photo_url,
-                    'local_file': filename,
-                    'title': album_photo['title'],
+                    'local_file': prefix + filename,
+                    'title': prefix + album_photo['title'],
                     'taken': album_photo['datetaken']
                 }
                 photos.append(photo)

@@ -1,14 +1,17 @@
 """
 Class file for PhotoListFetcher
 """
+import os
 from pathlib import Path
 from random import sample
 from time import sleep
 from typing import Callable, List, Optional
 
+import piexif
 import requests
 
 from .types import Photo, PhotoKey
+
 
 # Sample Photo response:
 # {'id': '50653354368', 'secret': '61b20f2e69', 'server': '65535', 'farm': 66, 'title': 'Red-eared slider',
@@ -94,7 +97,7 @@ class PhotoListFetcher:
         'alphabetical': sort_title,
         'taken': sort_taken,
     }
-    post_download_callback: Optional[Callable[[str], None]]
+    post_download_callback: Optional[Callable[[str, Photo], None]]
 
     def __init__(self) -> None:
         self.preferred_size = None
@@ -136,10 +139,10 @@ class PhotoListFetcher:
         for photo in photos:
             outfile = output_dir + '/' + photo['local_file']
             if not Path(outfile).exists():
-                self.download_image(photo['url'], outfile, True)
+                self.download_image(photo, outfile, True)
                 sleep(0.1)
 
-    def download_image(self, url: str, outfile: str, verbose: bool = False):
+    def download_image(self, photo: Photo, outfile: str, verbose: bool = False):
         """
         Fetch a single image from URL to local file
         :param verbose:
@@ -150,6 +153,7 @@ class PhotoListFetcher:
         suffix = Path(outfile).suffix.lower()
         if suffix not in ['.jpg', '.jpeg', '.gif', '.png']:
             raise ValueError(f"Non-JPG filename '{outfile}' ({suffix}) found, aborting as a precaution")
+        url = photo['url']
         response = requests.get(url)
         content_type = response.headers['Content-Type'].split(';')[0]
         if content_type.split('/')[0].lower() != 'image':
@@ -157,8 +161,10 @@ class PhotoListFetcher:
         open(outfile, 'wb').write(response.content)
         if verbose:
             print(f'{url} => {outfile}')
+        title = photo['title']
+        os.system(f'exiftool -overwrite_original -iptc:ObjectName="{title}" "{outfile}"')
         if self.post_download_callback:
-            self.post_download_callback(outfile)
+            self.post_download_callback(outfile, photo)
 
     @staticmethod
     def remove_local_without_remote(photos: List[Photo], local_dir: str):

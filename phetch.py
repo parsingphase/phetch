@@ -36,6 +36,7 @@ def parse_cli_args() -> argparse.Namespace:
     parser.add_argument('--sort-order', help='One of ', choices=PhotoListFetcher.get_sort_keys(), default='natural')
     parser.add_argument('--sort-reverse', help='Reverse sort order', action='store_true')
     parser.add_argument('--save-photo-list', help='File to export JSON album index to')
+    parser.add_argument('--random-title', help='Randomize filename', action='store_true')
     args = parser.parse_args()
     if args.watermark_opacity and not args.watermark_file:
         print('--watermark-opacity is invalid without --apply-watermark')
@@ -62,6 +63,8 @@ def run_cli() -> None:
     flickr_reader = FlickrReader(init_flickr_client('./config.yml'))
     if args.suffix:
         flickr_reader.set_preferred_size_suffix(args.suffix)
+    if args.random_title:
+        flickr_reader.set_random_title(True)
 
     albums = args.album_id.split(',')
     photos = flickr_reader.scan_albums(albums)
