@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Improve image's keywords and title organization for upload to flickr, etc
+Improve keywords and title organization for all images in a folder for upload to flickr, etc
 """
 
 import argparse
@@ -21,9 +21,10 @@ def parse_cli_args() -> argparse.Namespace:
         Namespace of provided arguments
     """
     parser = argparse.ArgumentParser(
-        description='Improve image\'s keywords and title organization for upload to flickr, etc',
+        description='Improve keywords and title organization for all images in a folder for upload to flickr, etc',
     )
     parser.add_argument('dir', help='Directory containing files to watermark')
+    parser.add_argument('--rename', help='Modify filename to include subject', action='store_true')
     args = parser.parse_args()
     return args
 
@@ -61,10 +62,11 @@ def run_cli() -> None:
     source_files = list(source_dir.glob('*.jpg'))
     for source_file in source_files:
         basename = source_file.name
-        image = pyexiv2.Image(str(source_file))
+        filename = str(source_file)
+        image = pyexiv2.Image(filename)
         iptc = image.read_iptc()
 
-        image_id = int(re.sub(r'[^\d]', '', basename))
+        image_id = extract_image_id_from_filename(basename)
 
         revised_iptc = {}
 
@@ -79,16 +81,34 @@ def run_cli() -> None:
         revised_iptc[IPTC_KEY_KEYWORDS] = keywords
         non_machine_keywords = [k for k in keywords if ':' not in k]
 
+        subject = ''
         if IPTC_KEY_SUBJECT in iptc:
             # Leave existing subjects alone
-            pass
+            subject = iptc[IPTC_KEY_SUBJECT]
         else:
             longest_keyword = max(non_machine_keywords, key=len)
             if longest_keyword:
-                revised_iptc[IPTC_KEY_SUBJECT] = make_subject(longest_keyword)
+                revised_iptc[IPTC_KEY_SUBJECT] = subject = make_subject(longest_keyword)
 
         image.modify_iptc(revised_iptc)
         print(f'Revised IPTC for {basename}', revised_iptc)
+        image.close()
+
+        if args.rename:
+            if subject and '(' not in basename:
+                new_filename = source_file.with_name(f'{source_file.stem} ({subject}){source_file.suffix}')
+                source_file.rename(new_filename)
+                print(f' Renamed {filename} to {new_filename}')
+
+
+def extract_image_id_from_filename(basename: str):
+    """
+    Pull the initial numeric fragment from a filename, ignoring anything after brackets
+    :param basename:
+    :return:
+    """
+    image_id = int(re.sub(r'[^\d]|(\(.*)', '', basename))
+    return image_id
 
 
 if __name__ == '__main__':

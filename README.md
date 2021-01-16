@@ -110,6 +110,28 @@ For usage, `python3 cron_image_tweet.py --help`
                             File containing list of Flickr photo dates/ids  
       --dry-run             Prepare the tweet but don't send it
     
+#### introspect.py
+
+Modifies image keywords, subject and filename to help find and identify files, for all files in a 
+directory:
+
+ - If no subject, longest keyword is assumed to be subject
+ - Any image ID found in the filename is stored as a keyword 'library:fileId=NUMBER'
+ - Optionally, filename is modified to include the subject
+
+Usage: `python3 introspect.py -h`
+
+    usage: introspect.py [-h] [--rename] dir
+    
+    Improve keywords and title organization for all images in a folder for upload to flickr, etc
+    
+    positional arguments:
+      dir         Directory containing files to watermark
+    
+    optional arguments:
+      -h, --help  show this help message and exit
+      --rename    Modify filename to include subject
+
 #### list_overlaps.py
 
 A utility script to help generate a list of files suitable for `cron_image_tweet.py`
