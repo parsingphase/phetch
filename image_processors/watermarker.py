@@ -3,6 +3,7 @@ Class file for Watermarker
 """
 from typing import Optional, Tuple
 
+import pyexiv2
 from PIL import Image, ImageStat
 from PIL.ImageFile import ImageFile
 
@@ -22,6 +23,32 @@ def standard_save(image: Image, image_file_path: str):
         exif=image.info["exif"],
         subsampling='4:4:4'
     )
+
+
+def write_iptc(image_file_path: str, iptc: dict):
+    """
+    Write iptc data to file
+
+    :param image_file_path:
+    :param iptc:
+    :return:
+    """
+    exiv_image = pyexiv2.Image(image_file_path)
+    exiv_image.modify_iptc(iptc)
+    exiv_image.close()
+
+
+def read_iptc(image_file_path: str) -> dict:
+    """
+    Read iptc data from file
+
+    :param image_file_path:
+    :return:
+    """
+    exiv_image = pyexiv2.Image(image_file_path)
+    iptc = exiv_image.read_iptc()
+    exiv_image.close()
+    return iptc
 
 
 class Watermarker:
@@ -77,8 +104,10 @@ class Watermarker:
         :return:
         """
         image: ImageFile = Image.open(image_file_path)
+        iptc = read_iptc(image_file_path)
         image = self.watermark_image(image)
         standard_save(image, image_file_path)
+        write_iptc(image_file_path, iptc)
 
     def copy_with_watermark(self, input_file: str, output_file: str, max_edge: Optional[int] = None) -> None:
         """
@@ -90,6 +119,7 @@ class Watermarker:
         :return:
         """
         image: ImageFile = Image.open(input_file)
+        iptc = read_iptc(input_file)
         if max_edge is not None:
             if image.width > image.height:
                 ratio = max_edge / image.width
@@ -101,6 +131,7 @@ class Watermarker:
 
         image = self.watermark_image(image)
         standard_save(image, output_file)
+        write_iptc(output_file, iptc)
 
     def watermark_image(self, image: ImageFile) -> ImageFile:
         """
