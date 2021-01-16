@@ -57,10 +57,8 @@ def run_cli() -> None:
     :return:
     """
     args = parse_cli_args()
-    source_dir = Path(args.dir.rstrip('/'))
 
-    source_files = list(source_dir.glob('*.jpg'))
-    for source_file in source_files:
+    for source_file in list(Path(args.dir).glob('*.jpg')):
         basename = source_file.name
         filename = str(source_file)
         image = pyexiv2.Image(filename)
@@ -76,22 +74,26 @@ def run_cli() -> None:
             if not isinstance(keywords, list):
                 keywords = [keywords]
 
-        keywords.append(f'library:fileId={image_id}')
-        keywords = list(set(keywords))  # make unique
-        revised_iptc[IPTC_KEY_KEYWORDS] = keywords
+        file_id_keyword = f'library:fileId={image_id}'
+
+        if file_id_keyword not in keywords:
+            keywords.append(file_id_keyword)
+            revised_iptc[IPTC_KEY_KEYWORDS] = keywords
+
         non_machine_keywords = [k for k in keywords if ':' not in k]
 
         subject = ''
         if IPTC_KEY_SUBJECT in iptc:
             # Leave existing subjects alone
             subject = iptc[IPTC_KEY_SUBJECT]
-        else:
+        elif non_machine_keywords:
             longest_keyword = max(non_machine_keywords, key=len)
             if longest_keyword:
                 revised_iptc[IPTC_KEY_SUBJECT] = subject = make_subject(longest_keyword)
 
-        image.modify_iptc(revised_iptc)
-        print(f'Revised IPTC for {basename}', revised_iptc)
+        if revised_iptc.keys():
+            image.modify_iptc(revised_iptc)
+            print(f'Revised IPTC for {basename}', revised_iptc)
         image.close()
 
         if args.rename:

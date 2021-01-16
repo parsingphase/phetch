@@ -33,8 +33,12 @@ def run_cli() -> None:
     :return:
     """
     args = parse_cli_args()
-    config = load_config('./config.yml')
-    watermarker = Watermarker(config['watermark']['file'])
+    script_dir = Path(__file__).parent
+    config = load_config(str(script_dir / Path('config.yml')))
+    watermark = Path(config['watermark']['file'])
+    if not watermark.is_absolute():
+        watermark = script_dir / watermark
+    watermarker = Watermarker(str(watermark))
     if 'opacity' in config['watermark']:
         watermarker.set_watermark_opacity(config['watermark']['opacity'])
 
