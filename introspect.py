@@ -103,13 +103,13 @@ def run_cli() -> None:
                 print(f' Renamed {filename} to {new_filename}')
 
 
-def extract_image_id_from_filename(basename: str):
+def extract_image_id_from_filename(basename: str) -> str:
     """
     Pull the initial numeric fragment from a filename, ignoring anything after brackets
     :param basename:
     :return:
     """
-    image_id = int(re.sub(r'[^\d]|(\(.*)', '', basename))
+    image_id = re.sub(r'[^\d]|(\(.*)', '', basename)
     return image_id
 
 
