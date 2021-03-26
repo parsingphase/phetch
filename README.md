@@ -9,6 +9,12 @@ Flickr API tools [![Build Status](https://travis-ci.org/parsingphase/phetch.svg?
     source ./venv/bin/activate
     make install
 
+### M1 Mac Issues
+
+Some libraries (pyexiv2) are not available for M1 yet. Therefore the script needs to be coerced to run under 
+Rosetta. This can be achieved by using iTerm2 as the shell, running it via Rosetta (checkbox on info panel) and, 
+for some reason, using `pipenv shell` instead of the above `venv` stanza.
+
 ## Configuration
 
 - Get a non-commercial key from https://www.flickr.com/services/apps/create/noncommercial/
