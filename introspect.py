@@ -92,6 +92,9 @@ def degrees_float_to_dms_rational_string(degrees: float):
 def round_gps_location(image, gps_dp: int):
     revised_location = {}
     exif = image.read_exif()
+    if EXIF_KEY_LATITUDE not in exif or EXIF_KEY_LATITUDE not in exif:
+        return None
+
     lat = exif[EXIF_KEY_LATITUDE]
     lon = exif[EXIF_KEY_LONGITUDE]
     print(f'lat "{lat}"')
@@ -124,14 +127,21 @@ def run_cli() -> None:
         basename = source_file.name
         filename = str(source_file)
         image = pyexiv2.Image(filename)
-        iptc = image.read_iptc()
 
+        # Revise location if specified
+        geo_exif = None
         revised_exif = {}
         if args.gps_dp is not None:
-            revised_exif = round_gps_location(image, args.gps_dp)
+            geo_exif = round_gps_location(image, args.gps_dp)
+            if geo_exif is None:
+                print(f'No geo data in {filename}')
+            else:
+                revised_exif = geo_exif
 
+        # Update image properties to/from keywords
         image_id = extract_image_id_from_filename(basename)
 
+        iptc = image.read_iptc()
         revised_iptc = {}
 
         keywords = []
@@ -142,9 +152,7 @@ def run_cli() -> None:
 
         file_id_keyword = f'library:fileId={image_id}'
 
-        if file_id_keyword not in keywords:
-            keywords.append(file_id_keyword)
-            revised_iptc[IPTC_KEY_KEYWORDS] = keywords
+        keywords.append(file_id_keyword)
 
         non_machine_keywords = [k for k in keywords if ':' not in k]
 
@@ -156,6 +164,14 @@ def run_cli() -> None:
             longest_keyword = max(non_machine_keywords, key=len)
             if longest_keyword:
                 revised_iptc[IPTC_KEY_SUBJECT] = subject = make_subject(longest_keyword)
+
+        # Add some informational keywords if we modified GPS
+        if geo_exif is not None:
+            keywords.append('Approximate GPS location')
+            keywords.append(f'gps:accuracy={args.gps_dp}dp')
+
+        if len(keywords):
+            revised_iptc[IPTC_KEY_KEYWORDS] = list(set(keywords))  # set removes dups
 
         if revised_iptc.keys():
             image.modify_iptc(revised_iptc)
