@@ -48,7 +48,7 @@ def run_cli() -> None:
         print(f'Output dir {output_dir} did not exist, creating it')
         output_dir.mkdir(parents=True)
 
-    source_files = list(source_dir.glob('*.jpg'))
+    source_files = list(source_dir.glob('*.jpg')) + list(source_dir.glob('*.jpeg'))
     done = 0
     for image in source_files:
         output = output_dir / image.name
