@@ -6,11 +6,11 @@ Improve keywords and title organization for all images in a folder for upload to
 import argparse
 import re
 from pathlib import Path
-from typing import Tuple
+from typing import Dict, List, Tuple, cast
 
 import pyexiv2
 
-Rational = Tuple[Tuple[int]]
+Rational = Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
 
 IPTC_KEY_SUBJECT = 'Iptc.Application2.ObjectName'
 IPTC_KEY_KEYWORDS = 'Iptc.Application2.Keywords'
@@ -65,7 +65,8 @@ def string_to_exif_rational(text: str) -> Rational:
     :return:
     """
     parts = text.split(' ')
-    tuples = tuple([tuple([int(n) for n in p.split('/')]) for p in parts])
+    # cast = 'Trust me on the length!'
+    tuples = cast(Rational, tuple([tuple([int(n) for n in p.split('/')]) for p in parts]))
     return tuples
 
 
@@ -81,6 +82,12 @@ def exif_rational_dms_to_float(dms: Rational) -> float:
 
 
 def degrees_float_to_dms_rational_string(degrees: float):
+    """
+    Convert a float value to an EXIF degrees, minutes, seconds rational string
+
+    :param degrees:
+    :return:
+    """
     minutes_dp = 6
     (int_degrees, frac_degrees) = [int(p) for p in str(degrees).split('.')]
     minutes = round(float(f'0.{frac_degrees}') * 60, minutes_dp)
@@ -89,11 +96,17 @@ def degrees_float_to_dms_rational_string(degrees: float):
     return f'{int_degrees}/1 {numerator}/{denominator} 0/1'
 
 
-def round_gps_location(image, gps_dp: int):
+def round_gps_location(image, gps_dp: int) -> Dict:
+    """
+    Take the GPS EXIF data from the supplied image and rounds its lat/long to the specified number of decimal points
+    :param image:
+    :param gps_dp:
+    :return:
+    """
     revised_location = {}
     exif = image.read_exif()
     if EXIF_KEY_LATITUDE not in exif or EXIF_KEY_LATITUDE not in exif:
-        return None
+        return {}
 
     lat = exif[EXIF_KEY_LATITUDE]
     lon = exif[EXIF_KEY_LONGITUDE]
@@ -109,11 +122,41 @@ def round_gps_location(image, gps_dp: int):
     return revised_location
 
 
-def round_dms_as_decimal(dms, gps_dp):
+def round_dms_as_decimal(dms: str, gps_dp: int) -> str:
+    """
+    Take an EXIF Rational DMS string, round it as a float of degrees, and re-encode it
+    :param dms:
+    :param gps_dp:
+    :return:
+    """
     old_lat = exif_rational_dms_to_float(string_to_exif_rational(dms))
     new_lat = round(old_lat, gps_dp)
     new_lat_string = degrees_float_to_dms_rational_string(new_lat)
     return new_lat_string
+
+
+def extract_iptc_keywords(iptc: Dict) -> List[str]:
+    """
+    Get keywords from IPTC data as a list
+    :param iptc:
+    :return:
+    """
+    keywords = []
+    if IPTC_KEY_KEYWORDS in iptc:
+        keywords = iptc[IPTC_KEY_KEYWORDS]
+        if not isinstance(keywords, list):
+            keywords = [keywords]
+    return keywords
+
+
+def extract_image_id_from_filename(basename: str) -> str:
+    """
+    Pull the initial numeric fragment from a filename, ignoring anything after brackets
+    :param basename:
+    :return:
+    """
+    image_id = re.sub(r'[^\d]|(\(.*)', '', basename)
+    return image_id
 
 
 def run_cli() -> None:
@@ -129,14 +172,11 @@ def run_cli() -> None:
         image = pyexiv2.Image(filename)
 
         # Revise location if specified
-        geo_exif = None
-        revised_exif = {}
+        geo_exif = {}
         if args.gps_dp is not None:
             geo_exif = round_gps_location(image, args.gps_dp)
-            if geo_exif is None:
+            if len(geo_exif.keys()) == 0:
                 print(f'No geo data in {filename}')
-            else:
-                revised_exif = geo_exif
 
         # Update image properties to/from keywords
         image_id = extract_image_id_from_filename(basename)
@@ -144,15 +184,8 @@ def run_cli() -> None:
         iptc = image.read_iptc()
         revised_iptc = {}
 
-        keywords = []
-        if IPTC_KEY_KEYWORDS in iptc:
-            keywords = iptc[IPTC_KEY_KEYWORDS]
-            if not isinstance(keywords, list):
-                keywords = [keywords]
-
-        file_id_keyword = f'library:fileId={image_id}'
-
-        keywords.append(file_id_keyword)
+        keywords = extract_iptc_keywords(iptc)
+        keywords.append(f'library:fileId={image_id}')
 
         non_machine_keywords = [k for k in keywords if ':' not in k]
 
@@ -170,17 +203,10 @@ def run_cli() -> None:
             keywords.append('Approximate GPS location')
             keywords.append(f'gps:accuracy={args.gps_dp}dp')
 
-        if len(keywords):
+        if len(keywords) > 0:
             revised_iptc[IPTC_KEY_KEYWORDS] = list(set(keywords))  # set removes dups
 
-        if revised_iptc.keys():
-            image.modify_iptc(revised_iptc)
-            print(f'Revised IPTC for {basename}', revised_iptc)
-
-        if revised_exif.keys():
-            image.modify_exif(revised_exif)
-            print(f'Revised EXIF for {basename}', revised_exif)
-
+        save_revised_image(image, basename, geo_exif, revised_iptc)
         image.close()
 
         if args.rename:
@@ -190,14 +216,21 @@ def run_cli() -> None:
                 print(f' Renamed {filename} to {new_filename}')
 
 
-def extract_image_id_from_filename(basename: str) -> str:
+def save_revised_image(image, basename: str, revised_exif: Dict, revised_iptc: Dict):
     """
-    Pull the initial numeric fragment from a filename, ignoring anything after brackets
+    Store any changed data to the image at the provided location
+    :param image:
     :param basename:
+    :param revised_exif:
+    :param revised_iptc:
     :return:
     """
-    image_id = re.sub(r'[^\d]|(\(.*)', '', basename)
-    return image_id
+    if revised_iptc.keys():
+        image.modify_iptc(revised_iptc)
+        print(f'Revised IPTC for {basename}', revised_iptc)
+    if revised_exif.keys():
+        image.modify_exif(revised_exif)
+        print(f'Revised EXIF for {basename}', revised_exif)
 
 
 if __name__ == '__main__':
