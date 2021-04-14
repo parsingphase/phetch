@@ -66,7 +66,7 @@ def string_to_exif_rational(text: str) -> Rational:
     """
     parts = text.split(' ')
     # cast = 'Trust me on the length!'
-    tuples = cast(Rational, tuple([tuple([int(n) for n in p.split('/')]) for p in parts]))
+    tuples = cast(Rational, tuple(tuple(int(n) for n in p.split('/')) for p in parts))
     return tuples
 
 
@@ -110,8 +110,6 @@ def round_gps_location(image, gps_dp: int) -> Dict:
 
     lat = exif[EXIF_KEY_LATITUDE]
     lon = exif[EXIF_KEY_LONGITUDE]
-    print(f'lat "{lat}"')
-    print(f'lon "{lon}"')
 
     if lat:
         revised_location[EXIF_KEY_LATITUDE] = round_dms_as_decimal(lat, gps_dp)
