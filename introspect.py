@@ -197,7 +197,7 @@ def run_cli() -> None:
                 revised_iptc[IPTC_KEY_SUBJECT] = subject = make_subject(longest_keyword)
 
         # Add some informational keywords if we modified GPS
-        if geo_exif is not None:
+        if len(geo_exif.keys()):
             keywords.append('Approximate GPS location')
             keywords.append(f'gps:accuracy={args.gps_dp}dp')
 
