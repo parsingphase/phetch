@@ -139,7 +139,7 @@ def extract_iptc_keywords(iptc: Dict) -> Set[str]:
     :param iptc:
     :return:
     """
-    keywords = ()
+    keywords = []
     if IPTC_KEY_KEYWORDS in iptc:
         keywords = iptc[IPTC_KEY_KEYWORDS]
         if not isinstance(keywords, list):
@@ -151,6 +151,7 @@ def extract_iptc_keywords(iptc: Dict) -> Set[str]:
 def extract_image_id_from_filename(basename: str) -> str:
     """
     Pull the initial numeric fragment from a filename, ignoring anything after brackets
+    NB: has issues with 1234-2 style, should only pick first digits
     :param basename:
     :return:
     """
@@ -169,12 +170,14 @@ def populated_keys_changed(original: Dict, revised: Dict) -> bool:
 
     for (key, value) in revised.items():
         if key in original:
-            if type(value) == list:
+            if isinstance(value, list):  # strictly, any iterable, but we should only see lists
                 changed = len(set(value) - set(original[key])) > 0
             else:
                 changed = original[key] != revised[key]
         else:
             changed = True
+
+        if changed:
             break
 
     return changed
@@ -189,7 +192,7 @@ def revise_iptc(iptc, additional_keywords: Optional[Set] = None) -> Dict:
     :return:
     """
     if additional_keywords is None:
-        additional_keywords = ()
+        additional_keywords = set()
 
     revised_iptc = {}
 
@@ -256,8 +259,7 @@ def run_cli() -> None:
 
         # Find and apply subjects and keywords
         iptc = image.read_iptc()
-        keywords = set(keywords)  # normalize
-        revised_iptc = revise_iptc(iptc, keywords)
+        revised_iptc = revise_iptc(iptc, set(keywords))
 
         if populated_keys_changed(exif, revised_exif) or populated_keys_changed(iptc, revised_iptc):
             # We don't want to update (and change timestamp) if nothing changed
@@ -268,6 +270,7 @@ def run_cli() -> None:
             # If we can get a subject from revised or existing data, apply it to the name
             subject = revised_iptc.get(IPTC_KEY_SUBJECT, iptc.get(IPTC_KEY_SUBJECT, None))
             if subject and '(' not in basename:
+                # FIXME: check that existing filename is not already present, use -N strategy if so
                 new_filename = source_file.with_name(f'{source_file.stem} ({subject}){source_file.suffix}')
                 source_file.rename(new_filename)
                 print(f' Renamed {filename} to {new_filename}')
