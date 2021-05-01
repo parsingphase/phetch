@@ -199,11 +199,10 @@ def revise_iptc(iptc, additional_keywords: Optional[Set] = None) -> Dict:
     # Update image properties to/from keywords
     keywords = extract_iptc_keywords(iptc)
     non_machine_keywords = [k for k in keywords if ':' not in k and k != GPS_LOCATION_KEYWORD]
-    if IPTC_KEY_SUBJECT not in iptc:
+    if (IPTC_KEY_SUBJECT not in iptc) and (len(non_machine_keywords) > 0):
         longest_keyword = max(non_machine_keywords, key=len)
-        if longest_keyword:
-            subject = make_subject(longest_keyword)
-            revised_iptc[IPTC_KEY_SUBJECT] = subject
+        subject = make_subject(longest_keyword)
+        revised_iptc[IPTC_KEY_SUBJECT] = subject
 
     keywords = keywords.union(set(additional_keywords))
 
