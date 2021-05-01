@@ -60,7 +60,7 @@ def make_subject(text: str):
 
 def string_to_exif_rational(text: str) -> Rational:
     """
-    Given a Rational exif string, eg 71/1 81159000/10000000 0/1, unpack to (2-3) Tuple of (nom,denom)
+    Given a Rational exif string, eg 71/1 81159000/10000000 0/1, unpack to (2-3) Tuple of (num,denom)
 
     :param text:
     :return:
