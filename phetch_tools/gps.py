@@ -7,6 +7,20 @@ GPS_LOCATION_KEYWORD = 'Approximate GPS location'
 
 
 class GPS:
+    exif_keys = [
+        'Exif.GPSInfo.GPSVersionID',
+        'Exif.GPSInfo.GPSLatitudeRef',
+        'Exif.GPSInfo.GPSLatitude',
+        'Exif.GPSInfo.GPSLongitudeRef',
+        'Exif.GPSInfo.GPSLongitude',
+        'Exif.GPSInfo.GPSAltitudeRef',
+        'Exif.GPSInfo.GPSAltitude',
+        'Exif.GPSInfo.GPSTimeStamp',
+        'Exif.GPSInfo.GPSSatellites',
+        'Exif.GPSInfo.GPSMapDatum',
+        'Exif.GPSInfo.GPSDateStamp',
+    ]
+
     @staticmethod
     def string_to_exif_rational(text: str) -> Rational:
         """

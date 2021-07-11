@@ -7,9 +7,10 @@ import argparse
 import re
 from pathlib import Path
 from typing import Dict, Optional, Set, Tuple
-from phetch_tools import GPS
 
 import pyexiv2
+
+from phetch_tools import GPS
 
 Rational = Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
 
@@ -72,15 +73,14 @@ def extract_iptc_keywords(iptc: Dict) -> Set[str]:
     return set(keywords)
 
 
-def extract_image_id_from_filename(basename: str) -> str:
+def extract_image_id_from_filename(basename: str) -> Optional[str]:
     """
     Pull the initial numeric fragment from a filename, ignoring anything after brackets
     :param basename:
     :return:
     """
     match = re.match(r'[^(\d]*(\d+)', basename)
-    image_id = match.group(1)
-    return image_id
+    return None if match is None else match.group(1)
 
 
 def populated_keys_changed(original: Dict, revised: Dict) -> bool:

@@ -10,19 +10,8 @@ import pyexiv2
 
 from phetch_tools import GPS
 
-exif_keys = [
-    'Exif.GPSInfo.GPSVersionID',
-    'Exif.GPSInfo.GPSLatitudeRef',
-    'Exif.GPSInfo.GPSLatitude',
-    'Exif.GPSInfo.GPSLongitudeRef',
-    'Exif.GPSInfo.GPSLongitude',
-    'Exif.GPSInfo.GPSAltitudeRef',
-    'Exif.GPSInfo.GPSAltitude',
-    'Exif.GPSInfo.GPSTimeStamp',
-    'Exif.GPSInfo.GPSSatellites',
-    'Exif.GPSInfo.GPSMapDatum',
-    'Exif.GPSInfo.GPSDateStamp',
-]
+exif_keys = GPS.exif_keys
+
 
 xmp_keys = [
     'Xmp.xmpMM.History',  # prints as 'type="Seq"', doesn't appear iterable
@@ -57,7 +46,7 @@ def run_cli() -> None:
     files = args.files
 
     for file in files:
-        s = '         As float:'
+        float_marker = '         As float:'
         pathed_file = Path(file)
         filename = str(pathed_file)
         image = pyexiv2.Image(filename)
@@ -78,7 +67,7 @@ def run_cli() -> None:
             print(f'{key:30} {exif_value}')
             if key in ['Exif.GPSInfo.GPSLatitude', 'Exif.GPSInfo.GPSLongitude']:
                 float_val = GPS.exif_rational_dms_to_float(GPS.string_to_exif_rational(exif_value))
-                print(f'{s:30} {float_val}')
+                print(f'{float_marker:30} {float_val}')
                 # Lat:  +/- 90
                 # Long: +/- 80
 
