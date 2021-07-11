@@ -49,11 +49,10 @@ def parse_cli_args() -> argparse.Namespace:
 def extract_image_id_from_filename(basename: str) -> str:
     """
     Pull the initial numeric fragment from a filename, ignoring anything after brackets
-    NB: has issues with 1234-2 style, should only pick first digits
     :param basename:
     :return:
     """
-    match = re.match(r'IMG_(\d{4})', basename)
+    match = re.match(r'[^(\d]*(\d+)', basename)
     image_id = match.group(1)
     return image_id
 

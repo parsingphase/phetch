@@ -75,11 +75,11 @@ def extract_iptc_keywords(iptc: Dict) -> Set[str]:
 def extract_image_id_from_filename(basename: str) -> str:
     """
     Pull the initial numeric fragment from a filename, ignoring anything after brackets
-    NB: has issues with 1234-2 style, should only pick first digits
     :param basename:
     :return:
     """
-    image_id = re.sub(r'[^\d]|(\(.*)', '', basename)
+    match = re.match(r'[^(\d]*(\d+)', basename)
+    image_id = match.group(1)
     return image_id
 
 
