@@ -19,6 +19,12 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -29,6 +35,8 @@ jobs:
       - name: Pipenv setup
         run: pip install pipenv && pipenv install --dev
 
+      - run: ls
+
       # Runs a single command using the runners shell
-      - name: Run install and travis tests
-        run: make install travis_safe_tests
+      - name: Run travis tests
+        run: pipenv run make travis_safe_tests
