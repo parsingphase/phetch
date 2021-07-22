@@ -8,6 +8,9 @@ isort = "*"
 flake8 = "*"
 pylint = "*"
 mypy = "*"
+types-pyyaml = "*"
+types-python-dateutil = "*"
+types-requests = "*"
 
 [packages]
 flickrapi = "*"
