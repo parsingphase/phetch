@@ -35,8 +35,6 @@ jobs:
       - name: Pipenv setup
         run: pip install pipenv && pipenv install --dev
 
-      - run: ls
-
       # Runs a single command using the runners shell
       - name: Run travis tests
         run: pipenv run make travis_safe_tests

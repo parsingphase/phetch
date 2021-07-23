@@ -1,4 +1,4 @@
-Flickr API tools [![Build Status](https://travis-ci.org/parsingphase/phetch.svg?branch=master)](https://travis-ci.org/parsingphase/phetch)
+Flickr API tools [![CI](https://github.com/parsingphase/phetch/actions/workflows/main.yml/badge.svg)](https://github.com/parsingphase/phetch/actions/workflows/main.yml)
 ================
 
 ## Setup 

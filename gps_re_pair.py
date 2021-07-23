@@ -66,8 +66,7 @@ def run_cli() -> None:
 
         img_sets[image_id]['raw' if is_from_raw_file(source_file) else 'derived'].append(source_file)
 
-    for img_set_key in img_sets:
-        img_set = img_sets[img_set_key]
+    for img_set in img_sets.values():
         if len(img_set['raw']) > 0 and len(img_set['derived']) > 0:
             gps_source_file = img_set['raw'][0]
 
