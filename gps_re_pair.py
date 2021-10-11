@@ -73,7 +73,8 @@ def run_cli() -> None:
         if image_id not in img_sets:
             img_sets[image_id] = {'raw': [], 'derived': []}
 
-        img_sets[image_id]['raw' if is_from_raw_file(source_file) else 'derived'].append(source_file)
+        if 'fixed-gps' not in source_file.name:
+            img_sets[image_id]['raw' if is_from_raw_file(source_file) else 'derived'].append(source_file)
 
     for img_set_key in img_sets:
         img_set = img_sets[img_set_key]
@@ -85,13 +86,13 @@ def run_cli() -> None:
             for derived in img_set['derived']:
                 apply_exif_to_file(good_gps, derived)
                 print(f'{derived}, ', end='')
-                if 'fixed-gps' not in derived.name:
-                    new_filename = derived.with_name(f'{derived.stem}-fixed-gps{derived.suffix}')
+                if 'fixed-gps' not in derived.name: # double-check before saving
+                    new_filename = derived.with_name(f'{derived.stem} fixed-gps{derived.suffix}')
                     derived.rename(new_filename)
             print()
 
             if 'gps-donor' not in gps_source_file.name:
-                new_filename = gps_source_file.with_name(f'{gps_source_file.stem}-gps-donor{gps_source_file.suffix}')
+                new_filename = gps_source_file.with_name(f'{gps_source_file.stem} gps-donor{gps_source_file.suffix}')
                 gps_source_file.rename(new_filename)
 
 
