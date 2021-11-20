@@ -107,6 +107,18 @@ def populated_keys_changed(original: Dict, revised: Dict) -> bool:
     return changed
 
 
+def remove_title_blocklist_keywords(keywords):
+    """
+    Remove keywords that tend not to indicate a species name / valid title
+    """
+    blocklist = ['Maine', 'Massachusetts', 'export', 'pelagic', 'TakenByEva', 'flash', 'Rhode Island', 'Connecticut']
+    up_blocklist = [k.upper() for k in blocklist]
+    keywords = [k for k in keywords if k.upper() not in up_blocklist]
+    if len(keywords) > 1:
+        keywords = [k for k in keywords if k.upper() != 'UNIDENTIFIED']
+    return keywords
+
+
 def revise_iptc(iptc, additional_keywords: Optional[Set] = None) -> Dict:
     """
     Regenerated IPTC data based on keywords and subject
@@ -124,7 +136,8 @@ def revise_iptc(iptc, additional_keywords: Optional[Set] = None) -> Dict:
     keywords = extract_iptc_keywords(iptc)
     non_machine_keywords = [k for k in keywords if ':' not in k and k != GPS_LOCATION_KEYWORD]
     if (IPTC_KEY_SUBJECT not in iptc) and (len(non_machine_keywords) > 0):
-        longest_keyword = max(non_machine_keywords, key=len)
+        filtered_keywords = remove_title_blocklist_keywords(non_machine_keywords)
+        longest_keyword = max(filtered_keywords, key=len)
         subject = make_subject(longest_keyword)
         revised_iptc[IPTC_KEY_SUBJECT] = subject
 
@@ -192,7 +205,7 @@ def run_cli() -> None:
         if args.rename:
             # If we can get a subject from revised or existing data, apply it to the name
             subject = revised_iptc.get(IPTC_KEY_SUBJECT, iptc.get(IPTC_KEY_SUBJECT, None))
-            if subject and '(' not in basename:
+            if subject and not re.search(r'\([^)]{3,}\)', basename):
                 # FIXME: check that existing filename is not already present, use -N strategy if so
                 new_filename = source_file.with_name(f'{source_file.stem} ({subject}){source_file.suffix}')
                 source_file.rename(new_filename)
