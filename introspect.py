@@ -111,7 +111,7 @@ def remove_title_blocklist_keywords(keywords):
     """
     Remove keywords that tend not to indicate a species name / valid title
     """
-    blocklist = ['Maine', 'Massachusetts', 'export', 'pelagic', 'TakenByEva', 'flash']
+    blocklist = ['Maine', 'Massachusetts', 'export', 'pelagic', 'TakenByEva', 'flash', 'Rhode Island', 'Connecticut']
     up_blocklist = [k.upper() for k in blocklist]
     keywords = [k for k in keywords if k.upper() not in up_blocklist]
     if len(keywords) > 1:
