@@ -142,7 +142,25 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
     when_date = parse(when)
     friendly_date = pendulum.instance(when_date).format('Do MMMM Y')  # type: ignore
 
-    text = f'{title}, {friendly_date} {hashtag}'
+    locale = []
+    # noinspection PyBroadException
+    try:
+        gps_data = flickr.photos.geo.getLocation(photo_id=photo_id)
+        location = gps_data['photo']['location']
+        place = location['neighbourhood']['_content'] if location['neighbourhood'] else location['locality']['_content']
+        state = location['region']['_content']
+        country = location['country']['_content']
+        if country == 'United States' or country == 'USA':
+            country = ''  # State (region) is adequate here
+        locale = [place, state, country]
+    except Exception as e:
+        pass
+    locale = [k for k in locale if k]
+    locale_string = ', '.join(locale)
+    if len(locale_string) > 0:
+        locale_string = '\n' + locale_string
+
+    text = f'{title}, {friendly_date}{locale_string}\n{hashtag}'
 
     return {
         'text': text,
