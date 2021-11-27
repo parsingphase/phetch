@@ -33,6 +33,8 @@ def parse_cli_args() -> argparse.Namespace:
     parser.add_argument('--from-date', help='Start date in YYYYmmdd format')
     parser.add_argument('--unique-titles', help='Output only one row per title', action='store_true')
     parser.add_argument('--exclude-from-file', help='Exclude photos already listed in file')
+    parser.add_argument('--any-subsequent-album', help='List photos in the first album and ANY subsequent one, '
+                                                       'instead of ALL', action='store_true')
     parser.add_argument('--csv', help='Output as CSV', action='store_true')
     args = parser.parse_args()
     if len(args.album_id) < 2:
@@ -66,9 +68,11 @@ def unique_titles(photos: List[Photo], defer_remainder=False) -> List[Photo]:
     for photo in photos:
         if photo['title'] in seen_titles:
             deferred.append(photo)
+            print(f"{photo['title']} =>", file=sys.stderr)
         else:
             filtered.append(photo)
             seen_titles.append(photo['title'])
+            print(f"{photo['title']} +", file=sys.stderr)
 
     if defer_remainder and len(deferred) > 0:
         filtered = filtered + unique_titles(deferred, True)
@@ -112,9 +116,17 @@ def run_cli() -> None:
     flickr_reader.set_silent(True)
     albums = [flickr_reader.scan_album(album_id) for album_id in album_ids]
 
-    filtered = albums.pop()
-    for album in albums:
-        filtered = photos_intersection(filtered, album)
+    filtered = albums.pop(0)
+    if args.any_subsequent_album:
+        print('Compositing subsequent albums', file=sys.stderr)
+        composite = []
+        for album in albums:
+            composite = composite + album
+        filtered = photos_intersection(filtered, composite)
+    else:
+        print('Calculating union of ALL albums', file=sys.stderr)
+        for album in albums:
+            filtered = photos_intersection(filtered, album)
 
     if args.unique_titles:
         filtered = unique_titles(filtered, False)  # used as a pure uniqueness function here
