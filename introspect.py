@@ -6,7 +6,7 @@ Improve keywords and title organization for all images in a folder for upload to
 import argparse
 import re
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import pyexiv2
 
@@ -107,7 +107,7 @@ def populated_keys_changed(original: Dict, revised: Dict) -> bool:
     return changed
 
 
-def remove_title_blocklist_keywords(keywords):
+def remove_title_blocklist_keywords(keywords) -> List[str]:
     """
     Remove keywords that tend not to indicate a species name / valid title
     """

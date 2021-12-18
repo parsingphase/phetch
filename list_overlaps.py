@@ -119,7 +119,7 @@ def run_cli() -> None:
     filtered = albums.pop(0)
     if args.any_subsequent_album:
         print('Compositing subsequent albums', file=sys.stderr)
-        composite = []
+        composite: List[Photo] = []
         for album in albums:
             composite = composite + album
         filtered = photos_intersection(filtered, composite)

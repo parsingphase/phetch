@@ -76,7 +76,7 @@ def run_cli() -> None:
             for derived in img_set['derived']:
                 apply_exif_to_file(good_gps, derived)
                 print(f'{derived}, ', end='')
-                if 'fixed-gps' not in derived.name: # double-check before saving
+                if 'fixed-gps' not in derived.name:  # double-check before saving
                     new_filename = derived.with_name(f'{derived.stem} fixed-gps{derived.suffix}')
                     derived.rename(new_filename)
             print()

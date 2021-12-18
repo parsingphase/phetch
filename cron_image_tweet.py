@@ -142,21 +142,7 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
     when_date = parse(when)
     friendly_date = pendulum.instance(when_date).format('Do MMMM Y')  # type: ignore
 
-    locale = []
-    # noinspection PyBroadException
-    try:
-        gps_data = flickr.photos.geo.getLocation(photo_id=photo_id)
-        location = gps_data['photo']['location']
-        place = location['neighbourhood']['_content'] if location['neighbourhood'] else location['locality']['_content']
-        state = location['region']['_content']
-        country = location['country']['_content']
-        if country == 'United States' or country == 'USA':
-            country = ''  # State (region) is adequate here
-        locale = [place, state, country]
-    except Exception as e:
-        pass
-    locale = [k for k in locale if k]
-    locale_string = ', '.join(locale)
+    locale_string = get_photo_location_string(flickr, photo_id)
     if len(locale_string) > 0:
         locale_string = '\n' + locale_string
 
@@ -166,6 +152,34 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
         'text': text,
         'media': url
     }
+
+
+def get_photo_location_string(flickr, photo_id) -> str:
+    """
+    Get a location string for the given photo from the Flickr API
+    :param flickr:
+    :param photo_id:
+    :return:
+    """
+    locale = []
+    try:
+        gps_data = flickr.photos.geo.getLocation(photo_id=photo_id)
+        location = gps_data['photo']['location']
+        if location['neighbourhood']:
+            place = location['neighbourhood']['_content']
+        else:
+            place = location['locality']['_content']
+        state = location['region']['_content']
+        country = location['country']['_content']
+        if country in ('United States', 'USA'):
+            country = ''  # State (region) is adequate here
+        locale = [place, state, country]
+    except flickrapi.exceptions.FlickrError:
+        pass
+
+    locale = [k for k in locale if k]
+    locale_string = ', '.join(locale)
+    return locale_string
 
 
 def get_photo_url(flickr: flickrapi.FlickrAPI, photo_id: str) -> str:
