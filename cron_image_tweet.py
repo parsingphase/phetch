@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 from os import getenv
 from pathlib import Path
-from typing import Any, Generator, List, Optional, cast
+from typing import Any, Dict, Generator, List, Optional, cast
 
 import flickrapi
 import pendulum
@@ -146,13 +146,7 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
     # noinspection PyBroadException
     try:
         gps_data = flickr.photos.geo.getLocation(photo_id=photo_id)
-        location = gps_data['photo']['location']
-        place = location['neighbourhood']['_content'] if location['neighbourhood'] else location['locality']['_content']
-        state = location['region']['_content']
-        country = location['country']['_content']
-        if country == 'United States' or country == 'USA':
-            country = ''  # State (region) is adequate here
-        locale = [place, state, country]
+        locale = get_locale_from_gps_data(gps_data)
     except Exception as e:
         pass
     locale = [k for k in locale if k]
@@ -166,6 +160,25 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
         'text': text,
         'media': url
     }
+
+
+def read_content(element: Optional[Dict[str, str]], default: Optional[str] = None) -> Optional[str]:
+    """Return a subfield of _content if present, else default """
+    return element['_content'] if element and element['_content'] else default
+
+
+def get_locale_from_gps_data(gps_data) -> List[str]:
+    """Get a list of locale info from Flickr gps_data"""
+    location = gps_data['photo']['location']
+    print(location)
+    neighbourhood = read_content(location['neighbourhood'], '')
+    place = neighbourhood if neighbourhood else read_content(location['locality'], '')
+    state = read_content(location['region'], '')
+    country = read_content(location['country'], '')
+    if country == 'United States' or country == 'USA':
+        country = ''  # State (region) is adequate here
+    locale = [place, state, country]
+    return locale
 
 
 def get_photo_url(flickr: flickrapi.FlickrAPI, photo_id: str) -> str:
