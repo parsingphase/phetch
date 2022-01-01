@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 from os import getenv
 from pathlib import Path
-from typing import Any, Generator, List, Optional, cast
+from typing import Any, Dict, Generator, List, Optional, cast
 
 import flickrapi
 import pendulum
@@ -138,7 +138,7 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
 
     info = flickr.photos.getInfo(photo_id=photo_id)
     when = info['photo']['dates']['taken']
-    title = info['photo']['title']['_content']
+    title = read_content(info['photo']['title'])
     when_date = parse(when)
     friendly_date = pendulum.instance(when_date).format('Do MMMM Y')  # type: ignore
 
@@ -165,12 +165,11 @@ def get_photo_location_string(flickr, photo_id) -> str:
     try:
         gps_data = flickr.photos.geo.getLocation(photo_id=photo_id)
         location = gps_data['photo']['location']
-        if location['neighbourhood']:
-            place = location['neighbourhood']['_content']
-        else:
-            place = location['locality']['_content']
-        state = location['region']['_content']
-        country = location['country']['_content']
+        neighbourhood = read_content(location['neighbourhood'])
+        locality = read_content(location['locality'])
+        place = neighbourhood if neighbourhood else locality
+        state = read_content(location['region'])
+        country = read_content(location['country'])
         if country in ('United States', 'USA'):
             country = ''  # State (region) is adequate here
         locale = [place, state, country]
@@ -180,6 +179,11 @@ def get_photo_location_string(flickr, photo_id) -> str:
     locale = [k for k in locale if k]
     locale_string = ', '.join(locale)
     return locale_string
+
+
+def read_content(element: Optional[Dict[str, str]]) -> str:
+    """Return a subfield of _content if present, else '' """
+    return element['_content'] if element and element['_content'] else ''
 
 
 def get_photo_url(flickr: flickrapi.FlickrAPI, photo_id: str) -> str:
