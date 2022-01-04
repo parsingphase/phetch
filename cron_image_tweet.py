@@ -167,12 +167,11 @@ def get_photo_location_string(flickr, photo_id) -> str:
         location = gps_data['photo']['location']
         neighbourhood = read_content(location['neighbourhood'])
         locality = read_content(location['locality'])
-        place = neighbourhood if neighbourhood else locality
         state = read_content(location['region'])
         country = read_content(location['country'])
         if country in ('United States', 'USA'):
             country = ''  # State (region) is adequate here
-        locale = [place, state, country]
+        locale = [neighbourhood, locality, state, country]
     except flickrapi.exceptions.FlickrError:
         pass
 
