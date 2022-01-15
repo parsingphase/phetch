@@ -146,12 +146,54 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
     if len(locale_string) > 0:
         locale_string = '\n' + locale_string
 
-    text = f'{title}, {friendly_date}{locale_string}\n{hashtag}'
+    properties_string = get_photo_properties_string(flickr, photo_id)
+    if len(properties_string) > 0:
+        properties_string = '\n' + properties_string
+
+    text = f'{title}, {friendly_date}{locale_string}{properties_string}\n{hashtag}'
+
+    print(f'Text length: {len(text)}')
 
     return {
         'text': text,
         'media': url
     }
+
+
+def first(values):
+    return values[0] if len(values) > 0 else None
+
+
+def get_photo_properties_string(flickr, photo_id) -> str:
+    """
+    Get a location string for the given photo from the Flickr API
+    :param flickr:
+    :param photo_id:
+    :return:
+    """
+    properties_string = ''
+    try:
+        exif_data = flickr.photos.getExif(photo_id=photo_id)
+        properties = exif_data['photo']['exif']
+        # print(properties)
+        model = first([read_content(p['raw']) for p in properties if p['tag'] == 'Model'])
+        exposure = first([read_content(p['raw']) for p in properties if p['tag'] == 'ExposureTime'])
+        aperture = first([read_content(p['clean']) for p in properties if p['tag'] == 'FNumber'])
+        iso = first([read_content(p['raw']) for p in properties if p['tag'] == 'ISO'])
+        focal = first([read_content(p['clean']) for p in properties if p['tag'] == 'FocalLength'])
+        # raw: {'model': 'Canon EOS 90D', 'exposure': '1/1600', 'aperture': 'f/7.1', 'iso': '250', 'focal': '600 mm'}
+        if exposure:
+            exposure = exposure + 's'
+        if focal:
+            focal = focal.replace(' ', '')
+        if iso:
+            iso = 'ISO ' + iso
+        # print({'model': model, 'exposure': exposure, 'aperture': aperture, 'iso': iso, 'focal': focal})
+        properties_string = ', '.join([p for p in [model, focal, exposure, aperture, iso] if p])
+        # print(properties_string)
+    except flickrapi.exceptions.FlickrError:
+        pass
+    return properties_string
 
 
 def get_photo_location_string(flickr, photo_id) -> str:
@@ -165,6 +207,7 @@ def get_photo_location_string(flickr, photo_id) -> str:
     try:
         gps_data = flickr.photos.geo.getLocation(photo_id=photo_id)
         location = gps_data['photo']['location']
+        # print(location)
         neighbourhood = read_content(location['neighbourhood'])
         locality = read_content(location['locality'])
         state = read_content(location['region'])
