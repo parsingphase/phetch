@@ -160,7 +160,12 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
     }
 
 
-def first(values):
+def first(values) -> str:
+    """
+    Return first element of an array or none
+    :param values:
+    :return:
+    """
     return values[0] if len(values) > 0 else None
 
 
