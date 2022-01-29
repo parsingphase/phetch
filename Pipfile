@@ -21,6 +21,7 @@ pillow = "~=8.1.1"
 pendulum = "*"
 python-twitter = "*"
 pyexiv2 = "*"
+pyshp = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.9"
