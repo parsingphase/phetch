@@ -7,7 +7,7 @@ import argparse
 from pathlib import Path
 import piexif
 from gps_tools.piexif_utils import get_clean_lat_long_from_piexif
-from gps_tools import find_lat_lng_shapefile_place
+from gps_tools import ShapefileLocationFinder, EPSG_DATUM
 from iptcinfo3 import IPTCInfo
 
 import logging
@@ -45,11 +45,14 @@ def run_cli() -> None:
     source_dir = Path(args.dir.rstrip('/'))
 
     source_files = list(source_dir.glob('*.jpg')) + list(source_dir.glob('*.jpeg'))
+
+    finder = ShapefileLocationFinder(SHAPEFILE, EPSG_DATUM['NAD83'], 'SITE_NAME')
+
     for image in source_files:
         image_file = str(image)
         exif_dict = piexif.load(image_file)
         lat_lng = get_clean_lat_long_from_piexif(exif_dict)
-        place = find_lat_lng_shapefile_place(lat_lng, SHAPEFILE) if lat_lng else None
+        place = finder.place_from_lat_lng(lat_lng) if lat_lng else None
         print(image.name, lat_lng, place)
         if place:
             add_place_tag_to_file(image_file, place)
