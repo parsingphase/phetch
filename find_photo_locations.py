@@ -8,6 +8,12 @@ from pathlib import Path
 import piexif
 from gps_tools.piexif_utils import get_clean_lat_long_from_piexif
 from gps_tools import find_lat_lng_shapefile_place
+from iptcinfo3 import IPTCInfo
+
+import logging
+
+iptcinfo_logger = logging.getLogger('iptcinfo')
+iptcinfo_logger.setLevel(logging.ERROR)
 
 SHAPEFILE = 'tmp/openspace/OPENSPACE_POLY'
 
@@ -40,10 +46,24 @@ def run_cli() -> None:
 
     source_files = list(source_dir.glob('*.jpg')) + list(source_dir.glob('*.jpeg'))
     for image in source_files:
-        exif_dict = piexif.load(str(image))
+        image_file = str(image)
+        exif_dict = piexif.load(image_file)
         lat_lng = get_clean_lat_long_from_piexif(exif_dict)
         place = find_lat_lng_shapefile_place(lat_lng, SHAPEFILE) if lat_lng else None
         print(image.name, lat_lng, place)
+        if place:
+            add_place_tag_to_file(image_file, place)
+
+
+def add_place_tag_to_file(image_file, place):
+    iptc = IPTCInfo(image_file)
+    raw_tags = iptc['keywords']
+    tags = [k.decode('utf-8') for k in raw_tags]
+    place_tag = f'geo:ma-openspace={place}'
+    if not place_tag in tags:
+        iptc['keywords'] += [place_tag.encode('utf-8')]
+        print(iptc['keywords'])
+        iptc.save()
 
 
 if __name__ == '__main__':
