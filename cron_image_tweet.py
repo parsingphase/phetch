@@ -46,7 +46,11 @@ def parse_cli_args() -> argparse.Namespace:
     group.add_argument('--source-flickr-download-dir', help='Directory of coded flickr downloads to use as source')
     group.add_argument('--source-flickr-file-list', help='File containing list of Flickr photo dates/ids')
     parser.add_argument('--dry-run', help="Prepare the tweet but don't send it", action='store_true')
+    parser.add_argument('--for-date', help="Generate a tweet for a specific day (YYYYmmdd format)")
     args = parser.parse_args()
+
+    if args.for_date and not re.match(r'^\d{8}$', args.for_date):
+        raise Exception("Bad for-date format")
 
     return args
 
@@ -109,13 +113,14 @@ def get_today_date_str() -> str:
     return datetime.today().strftime('%Y%m%d')
 
 
-def get_due_item_from_schedule(schedule: List[ScheduledId]) -> Optional[ScheduledId]:
+def get_due_item_from_schedule(schedule: List[ScheduledId], for_date: str = None) -> Optional[ScheduledId]:
     """
     Find the item in the schedule that's due to post today
     :param schedule:
+    :param for_date:
     :return:
     """
-    today_string = get_today_date_str()
+    today_string = for_date if for_date else get_today_date_str()
     today_items = [item for item in schedule if item['date_str'] == today_string]
     return today_items.pop() if len(today_items) > 0 else None
 
@@ -142,7 +147,13 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
     when_date = parse(when)
     friendly_date = pendulum.instance(when_date).format('Do MMMM Y')  # type: ignore
 
-    locale_string = get_photo_location_string(flickr, photo_id)
+    locale = get_photo_location_parts(flickr, photo_id)
+
+    tagged_place = get_tagged_place(info)
+    if tagged_place:
+        locale[0] = tagged_place
+
+    locale_string = join_locale(locale)
     if len(locale_string) > 0:
         locale_string = '\n' + locale_string
 
@@ -160,7 +171,31 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
     }
 
 
-def first(values):
+def get_tagged_place(info) -> Optional[str]:
+    """
+    Find a geo:place tag from image's flickr info
+
+    Args:
+        info:
+
+    Returns:
+
+    """
+    tags = info['photo']['tags']['tag']
+    place_tags = [t['raw'] for t in tags if t['raw'].startswith('geo:place=')]
+    tagged_place = place_tags[0].replace('geo:place=', '') if len(place_tags) > 0 else None
+    return tagged_place
+
+
+def first(values) -> Any:
+    """
+    Return the first of a list of values, or None
+    Args:
+        values:
+
+    Returns:
+
+    """
     return values[0] if len(values) > 0 else None
 
 
@@ -203,11 +238,38 @@ def get_photo_location_string(flickr, photo_id) -> str:
     :param photo_id:
     :return:
     """
+    locale = get_photo_location_parts(flickr, photo_id)
+    return join_locale(locale)
+
+
+def join_locale(locale: List[str]) -> str:
+    """
+    Join non-empty parts of list with commas
+    Args:
+        locale:
+
+    Returns:
+
+    """
+    locale = [k for k in locale if k]
+    locale_string = ', '.join(locale)
+    return locale_string
+
+
+def get_photo_location_parts(flickr, photo_id) -> List[str]:
+    """
+    Get a List containing whatever location data is available for an image via the flickr API
+    Args:
+        flickr:
+        photo_id:
+
+    Returns:
+
+    """
     locale = []
     try:
         gps_data = flickr.photos.geo.getLocation(photo_id=photo_id)
         location = gps_data['photo']['location']
-        # print(location)
         neighbourhood = read_content(location['neighbourhood'])
         locality = read_content(location['locality'])
         state = read_content(location['region'])
@@ -217,10 +279,7 @@ def get_photo_location_string(flickr, photo_id) -> str:
         locale = [neighbourhood, locality, state, country]
     except flickrapi.exceptions.FlickrError:
         pass
-
-    locale = [k for k in locale if k]
-    locale_string = ', '.join(locale)
-    return locale_string
+    return locale
 
 
 def read_content(element: Optional[Dict[str, str]]) -> str:
@@ -279,20 +338,23 @@ def run_cli() -> None:
     else:
         raise NotImplementedError("--source mechanism selected hasn't been coded yet!")
 
-    post_tweet_from_schedule(schedule, DEFAULT_HASHTAG, dry_run)
+    post_tweet_from_schedule(schedule, DEFAULT_HASHTAG, dry_run, args.for_date)
 
 
-def post_tweet_from_schedule(schedule: List[ScheduledId], hashtag: str = '', dry_run: bool = False):
+def post_tweet_from_schedule(
+        schedule: List[ScheduledId], hashtag: str = '', dry_run: bool = False,
+        for_date: str = None):
     """
     Check for a due tweet, build and post it
 
     :param hashtag:
     :param schedule:
     :param dry_run: If true, just report on what the tweet would contain
+    :param for_date: Generate tweet for this date; default today
     :return:
     """
     assert_schedule_unique(schedule)
-    due_photo = get_due_item_from_schedule(schedule)
+    due_photo = get_due_item_from_schedule(schedule, for_date)
     if due_photo:
         tweet: SimpleTweet = build_tweet_by_flickr_photo_id(due_photo['photo_id'], hashtag)
         twitter_api = init_twitter_client('./config.yml')
