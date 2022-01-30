@@ -1,12 +1,14 @@
 from phetch_tools.init_flickr import init_flickr_client
-from gps_tools import ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, make_openspace_tag
+from gps_tools import ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, \
+    make_openspace_tag, load_custom_gpsvisualizer_polys_from_dir, lng_lat_point_from_lat_lng
 import webbrowser
 
 SHAPEFILE = 'tmp/openspace/OPENSPACE_POLY'
 SKIP_TO = None
 # ALBUM_ID = 72177720295678754  # Massachusetts Wildlife 2022
-# ALBUM_ID = 72157717912633238  # Wildlife Showcase 2021
-ALBUM_ID = 72177720295655372  # Massachusetts Birds 2022
+ALBUM_ID = 72157717912633238  # Wildlife Showcase 2021
+# ALBUM_ID = 72177720295655372  # Massachusetts Birds 2022
+POLYDIR = 'polyfiles'
 
 
 def run_cli():
@@ -23,8 +25,10 @@ def run_cli():
     photos = album['photoset']['photo']
     # photo_ids = [p['id'] for p in photos]
     finder = ShapefileLocationFinder(SHAPEFILE, EPSG_DATUM['NAD83'], 'SITE_NAME')
+    polygons = load_custom_gpsvisualizer_polys_from_dir(POLYDIR)
 
     for photo in photos:
+        place = None
         photo_id = photo['id']
         if skip_until and (str(photo_id) != str(skip_until)):
             print('Skip', photo_id, SKIP_TO)
@@ -36,7 +40,7 @@ def run_cli():
         try:
             gps_data = flickr.photos.geo.getLocation(photo_id=photo_id)
         except Exception:
-            print(photo_id, 'No GPS')
+            print(photo_id, title, 'No GPS')
             continue
 
         photo_details = flickr.photos.getInfo(photo_id=photo_id)
@@ -48,8 +52,18 @@ def run_cli():
             print(photo_id, title, 'already tagged', openspace_tags)
             continue
 
-        lat_lon = (gps_data['photo']['location']['latitude'], gps_data['photo']['location']['longitude'])
-        place = finder.place_from_lat_lng(lat_lon)
+        lat_lon = (float(gps_data['photo']['location']['latitude']), float(gps_data['photo']['location']['longitude']))
+
+        lng_lat_point = lng_lat_point_from_lat_lng(lat_lon)
+        for named_poly in polygons:
+            if named_poly['polygon'].contains(lng_lat_point):
+                place = named_poly['name']
+                print(f'Found {photo_id} in {place} polyfile')
+                break
+
+        if not place:
+            place = finder.place_from_lat_lng(lat_lon)
+
         print(f'{photo_id}, {title}, {place}')
         if place:
             place_tag = make_openspace_tag(place)
