@@ -3,9 +3,14 @@ from gps_tools import ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, 
 import webbrowser
 
 SHAPEFILE = 'tmp/openspace/OPENSPACE_POLY'
+SKIP_TO = None
+# ALBUM_ID = 72177720295678754  # Massachusetts Wildlife 2022
+# ALBUM_ID = 72157717912633238  # Wildlife Showcase 2021
+ALBUM_ID = 72177720295655372  # Massachusetts Birds 2022
 
 
 def run_cli():
+    skip_until = SKIP_TO
     flickr = init_flickr_client('./config.yml')
 
     # oauth needed: https://www.flickr.com/services/api/auth.oauth.html / https://stuvel.eu/flickrapi-doc/3-auth.html
@@ -14,17 +19,24 @@ def run_cli():
     else:
         flickr_get_token(flickr, 'write')
 
-    album = flickr.photosets.getPhotos(photoset_id=72157717912633238)
+    album = flickr.photosets.getPhotos(photoset_id=ALBUM_ID)
     photos = album['photoset']['photo']
     # photo_ids = [p['id'] for p in photos]
     finder = ShapefileLocationFinder(SHAPEFILE, EPSG_DATUM['NAD83'], 'SITE_NAME')
 
     for photo in photos:
         photo_id = photo['id']
+        if skip_until and (str(photo_id) != str(skip_until)):
+            print('Skip', photo_id, SKIP_TO)
+            continue
+        else:
+            skip_until = None
+
         title = photo['title']
         try:
             gps_data = flickr.photos.geo.getLocation(photo_id=photo_id)
         except Exception:
+            print(photo_id, 'No GPS')
             continue
 
         photo_details = flickr.photos.getInfo(photo_id=photo_id)

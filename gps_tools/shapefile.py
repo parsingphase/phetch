@@ -55,7 +55,6 @@ class ShapefileLocationFinder:
         self.place_name_field = place_name_field
         self.gps_point_transformer = pyproj.Transformer.from_crs(EPSG_DATUM['WGS84'], shapefile_datum, always_xy=True)
         self.bounding_polygon = make_poly_from_bbox(self.shapefile.bbox)
-        print(self.bounding_polygon)
 
     def place_from_lat_lng(self, lat_lng) -> Optional[str]:
         point = Point(self.gps_point_transformer.transform(lat_lng[1], lat_lng[0]))

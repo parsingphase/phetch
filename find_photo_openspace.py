@@ -4,7 +4,6 @@ Fetch one or more Flickr albums. Run with --help for details
 """
 
 import argparse
-import re
 from pathlib import Path
 import piexif
 from gps_tools.piexif_utils import get_clean_lat_long_from_piexif
