@@ -189,12 +189,9 @@ def get_tagged_place(info) -> Optional[str]:
 
 def first(values) -> Any:
     """
-    Return the first of a list of values, or None
-    Args:
-        values:
-
-    Returns:
-
+    Return first element of an array or none
+    :param values:
+    :return:
     """
     return values[0] if len(values) > 0 else None
 
