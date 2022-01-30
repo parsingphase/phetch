@@ -6,8 +6,8 @@ Fetch one or more Flickr albums. Run with --help for details
 import argparse
 from pathlib import Path
 import piexif
-from gps_tools.piexif_utils import get_clean_lat_long_from_piexif
-from gps_tools import ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, make_openspace_tag
+from gps_tools import get_clean_lat_long_from_piexif, ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, \
+    make_openspace_tag, load_custom_gpsvisualizer_polys_from_dir, lng_lat_point_from_lat_lng
 from iptcinfo3 import IPTCInfo
 
 import logging
@@ -16,6 +16,7 @@ iptcinfo_logger = logging.getLogger('iptcinfo')
 iptcinfo_logger.setLevel(logging.ERROR)
 
 SHAPEFILE = 'tmp/openspace/OPENSPACE_POLY'
+POLYDIR = 'polyfiles'
 
 
 def parse_cli_args() -> argparse.Namespace:
@@ -47,8 +48,10 @@ def run_cli() -> None:
     source_files = list(source_dir.glob('*.jpg')) + list(source_dir.glob('*.jpeg'))
 
     finder = ShapefileLocationFinder(SHAPEFILE, EPSG_DATUM['NAD83'], 'SITE_NAME')
+    polygons = load_custom_gpsvisualizer_polys_from_dir(POLYDIR)
 
     for image in source_files:
+        place = None
         image_file = str(image)
         iptc = IPTCInfo(image_file)
         tag = iptc_get_openspace_tag(iptc)
@@ -57,7 +60,22 @@ def run_cli() -> None:
             continue
         exif_dict = piexif.load(image_file)
         lat_lng = get_clean_lat_long_from_piexif(exif_dict)
-        place = finder.place_from_lat_lng(lat_lng) if lat_lng else None
+        if not lat_lng:
+            print(f'{image_file} has no GPS')
+            continue
+
+        lng_lat_point = lng_lat_point_from_lat_lng(lat_lng)
+        for named_poly in polygons:
+            if named_poly['polygon'].contains(lng_lat_point):
+                place = named_poly['name']
+                print(f'Found {image_file} in {place} polyfile')
+                break
+
+        if not place:
+            place = finder.place_from_lat_lng(lat_lng) if lat_lng else None
+            if place:
+                print(f'Found {image_file} in {place} by finder')
+
         print(image.name, lat_lng, place)
         if place:
             add_place_tag_to_file_iptc(iptc, place)

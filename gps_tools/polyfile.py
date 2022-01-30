@@ -1,6 +1,6 @@
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import Point
-from typing import TypedDict, List
+from typing import TypedDict, List, Tuple
 from pathlib import Path
 
 # NOTE: Points & polys here are LON-LAT, as per ESRI files
@@ -11,6 +11,7 @@ def read_polygon_from_gpsvisualizer_txt(filename: str) -> Polygon:
     """
     Generate a single Polygon from a single-TRACK text file
     created at https://www.gpsvisualizer.com/draw/
+    Be sure to use OSM view to avoid incorporating external commercial IP
 
     Args:
         filename:
@@ -50,6 +51,18 @@ def load_custom_gpsvisualizer_polys_from_dir(dir: str) -> List[NamedPolygon]:
         polys.append({'name': filename, 'polygon': poly})
 
     return polys
+
+
+def lng_lat_point_from_lat_lng(lat_lng: Tuple) -> Point:
+    """
+    Generate a lng-lat Point from a lat-lng Tuple
+    Args:
+        lat_lng:
+
+    Returns:
+
+    """
+    return Point(lat_lng[::-1]) if lat_lng else None
 
 
 def run_cli():
