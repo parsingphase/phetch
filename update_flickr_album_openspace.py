@@ -43,7 +43,12 @@ def run_cli():
             print(photo_id, title, 'No GPS')
             continue
 
-        photo_details = flickr.photos.getInfo(photo_id=photo_id)
+        try:
+            photo_details = flickr.photos.getInfo(photo_id=photo_id)
+        except Exception:
+            print(photo_id, title, 'Flickr b0rked')
+            break
+
         tags = photo_details['photo']['tags']['tag']
         tags_raw = [t['raw'] for t in tags]
 
