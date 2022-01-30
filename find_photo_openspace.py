@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 import piexif
 from gps_tools.piexif_utils import get_clean_lat_long_from_piexif
-from gps_tools import ShapefileLocationFinder, EPSG_DATUM
+from gps_tools import ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, make_openspace_tag
 from iptcinfo3 import IPTCInfo
 
 import logging
@@ -66,7 +66,7 @@ def run_cli() -> None:
 
 def add_place_tag_to_file_iptc(iptc, place):
     tags = decode_tags(iptc)
-    place_tag = f'geo:ma-openspace={place}'
+    place_tag = make_openspace_tag(place)
     if not place_tag in tags:
         iptc['keywords'] += [place_tag.encode('utf-8')]
         iptc.save()
@@ -80,7 +80,7 @@ def decode_tags(iptc):
 
 def iptc_get_openspace_tag(iptc):
     tags = decode_tags(iptc)
-    openspace_tags = [t for t in tags if re.match(r'^geo:ma-openspace=', t)]
+    openspace_tags = [t for t in tags if match_openspace_tag(t)]
     return openspace_tags[0] if len(openspace_tags) > 0 else None
 
 

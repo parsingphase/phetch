@@ -3,18 +3,10 @@ import pyproj
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
-photoLatLngs = [
-    (42.397, -71.145),
-    (42.385180, -71.150311),
-    (42.388840, -71.135915),
-    (42.369652, -71.144062),
-    (42.389045, -71.150795)
-]
-
+photoLatLng = (42.332508, -71.020932)
 
 def run_cli():
     shapefilePath = 'tmp/openspace/OPENSPACE_POLY'
-    photoLatLng = photoLatLngs[0]
     photo_place = find_lat_lng_shapefile_place(photoLatLng, shapefilePath)
 
     print(photo_place)
@@ -25,6 +17,8 @@ def find_lat_lng_shapefile_place(photoLatLng, shapefilePath):
     photo_point = Point(lat_lon_to_shapefile.transform(photoLatLng[1], photoLatLng[0]))
     sf = shapefile.Reader(shapefilePath)
     shapes = sf.shapes()
+    places = []
+
     for i in range(1, len(shapes)):
         shape = sf.shape(i)
         place = sf.record(i)['SITE_NAME']
@@ -40,9 +34,9 @@ def find_lat_lng_shapefile_place(photoLatLng, shapefilePath):
             break
 
         if poly.contains(photo_point):
-            return place
+            places.append(place)
 
-    return None
+    return ' / '.join(places)
 
 
 if __name__ == '__main__':
