@@ -6,18 +6,15 @@ Fetch one or more Flickr albums. Run with --help for details
 import argparse
 from pathlib import Path
 import piexif
-from gps_tools import get_clean_lat_long_from_piexif, ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, \
+from gps_tools import get_decimal_lat_long_from_piexif, ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, \
     make_openspace_tag, load_custom_gpsvisualizer_polys_from_dir, lng_lat_point_from_lat_lng
 from iptcinfo3 import IPTCInfo
-
-import logging
-
-iptcinfo_logger = logging.getLogger('iptcinfo')
-iptcinfo_logger.setLevel(logging.ERROR)
+from metadata_tools.iptc_utils import mute_iptcinfo_logger
 
 SHAPEFILE = 'tmp/openspace/OPENSPACE_POLY'
 POLYDIR = 'polyfiles'
 
+mute_iptcinfo_logger()
 
 def parse_cli_args() -> argparse.Namespace:
     """
@@ -59,7 +56,7 @@ def run_cli() -> None:
             print(f'{image_file} already tagged ({tag})')
             continue
         exif_dict = piexif.load(image_file)
-        lat_lng = get_clean_lat_long_from_piexif(exif_dict)
+        lat_lng = get_decimal_lat_long_from_piexif(exif_dict)
         if not lat_lng:
             print(f'{image_file} has no GPS')
             continue

@@ -6,17 +6,19 @@ Improve keywords and title organization for all images in a folder for upload to
 import argparse
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
-
-import pyexiv2
-
-from phetch_tools import GPS
+from typing import Dict, List, Optional, Tuple
+import piexif
+from metadata_tools.piexif_utils import get_decimal_lat_long_from_piexif, get_piexif_dms_from_decimal
+from gps_tools import GPS
+from iptcinfo3 import IPTCInfo
+from PIL import Image
+from metadata_tools.iptc_utils import mute_iptcinfo_logger, remove_iptcinfo_backup
 
 Rational = Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
 
-IPTC_KEY_SUBJECT = 'Iptc.Application2.ObjectName'
-IPTC_KEY_KEYWORDS = 'Iptc.Application2.Keywords'
 GPS_LOCATION_KEYWORD = 'Approximate GPS location'
+
+mute_iptcinfo_logger()
 
 
 def parse_cli_args() -> argparse.Namespace:
@@ -58,21 +60,6 @@ def make_subject(text: str):
     return text
 
 
-def extract_iptc_keywords(iptc: Dict) -> Set[str]:
-    """
-    Get keywords from IPTC data as a list
-    :param iptc:
-    :return:
-    """
-    keywords = []
-    if IPTC_KEY_KEYWORDS in iptc:
-        keywords = iptc[IPTC_KEY_KEYWORDS]
-        if not isinstance(keywords, list):
-            keywords = [keywords]
-
-    return set(keywords)
-
-
 def extract_image_id_from_filename(basename: str) -> Optional[str]:
     """
     Pull the initial numeric fragment from a filename, ignoring anything after brackets
@@ -107,63 +94,36 @@ def populated_keys_changed(original: Dict, revised: Dict) -> bool:
     return changed
 
 
-def remove_title_blocklist_keywords(keywords) -> List[str]:
+def remove_title_blocklist_keywords(keywords: List[str]) -> List[str]:
     """
     Remove keywords that tend not to indicate a species name / valid title
     """
-    blocklist = ['Maine', 'Massachusetts', 'export', 'pelagic', 'TakenByEva', 'flash', 'Rhode Island', 'Connecticut']
+    blocklist = [
+        'Maine', 'Massachusetts', 'export', 'pelagic', 'TakenByEva', 'flash', 'Rhode Island', 'Connecticut',
+        'unidentified', 'scenic', 'Cambridge', 'Boston', GPS_LOCATION_KEYWORD
+    ]
     up_blocklist = [k.upper() for k in blocklist]
     keywords = [k for k in keywords if k.upper() not in up_blocklist]
-    if len(keywords) > 1:
-        keywords = [k for k in keywords if k.upper() != 'UNIDENTIFIED']
     return keywords
 
 
-def revise_iptc(iptc, additional_keywords: Optional[Set] = None) -> Dict:
-    """
-    Regenerated IPTC data based on keywords and subject
-    additional_keywords will not be considered as candidates for subject
-    :param iptc:
-    :param additional_keywords:
-    :return:
-    """
-    if additional_keywords is None:
-        additional_keywords = set()
-
-    revised_iptc = {}
-
-    # Update image properties to/from keywords
-    keywords = extract_iptc_keywords(iptc)
-    non_machine_keywords = [k for k in keywords if ':' not in k and k != GPS_LOCATION_KEYWORD]
-    if (IPTC_KEY_SUBJECT not in iptc) and (len(non_machine_keywords) > 0):
-        filtered_keywords = remove_title_blocklist_keywords(non_machine_keywords)
-        longest_keyword = max(filtered_keywords, key=len)
-        subject = make_subject(longest_keyword)
-        revised_iptc[IPTC_KEY_SUBJECT] = subject
-
-    keywords = keywords.union(set(additional_keywords))
-
-    if len(keywords) > 0:
-        revised_iptc[IPTC_KEY_KEYWORDS] = list(keywords)
-
-    return revised_iptc
+def find_subject_from_keywords(keywords: List[str]) -> Optional[str]:
+    keywords = [k for k in keywords if ':' not in k]  # remove machine keywords
+    keywords = remove_title_blocklist_keywords(keywords)  # remove blocklist
+    longest_keyword = max(keywords, key=len)
+    return longest_keyword
 
 
-def save_revised_image(image, basename: str, revised_exif: Dict, revised_iptc: Dict):
-    """
-    Store any changed data to the image at the provided location
-    :param image:
-    :param basename:
-    :param revised_exif:
-    :param revised_iptc:
-    :return:
-    """
-    if len(revised_iptc.keys()) > 0:
-        image.modify_iptc(revised_iptc)
-        print(f'Revised IPTC for {basename}', revised_iptc)
-    if len(revised_exif.keys()) > 0:
-        image.modify_exif(revised_exif)
-        print(f'Revised EXIF for {basename}', revised_exif)
+def round_piexiv_gps(exif_dict, dp):
+    revised_exif = None
+    lat, lng = get_decimal_lat_long_from_piexif(exif_dict)
+    round_lat, round_lng = (
+        GPS.round_dms_as_decimal(lat, dp),
+        GPS.round_dms_as_decimal(lng, dp)
+    )
+    if (round_lat != lat) or (round_lng != lng):
+        revised_exif = get_piexif_dms_from_decimal((round_lat, round_lng))
+    return revised_exif
 
 
 def run_cli() -> None:
@@ -176,35 +136,54 @@ def run_cli() -> None:
     for source_file in list(Path(args.dir).glob('*.jpg')):
         basename = source_file.name
         filename = str(source_file)
-        image = pyexiv2.Image(filename)
-
-        exif = image.read_exif()
-        revised_exif = {}
+        exif_dict = piexif.load(filename)
+        revised_exif = None
 
         # Revise location if specified
-        if args.gps_dp is not None:
-            revised_exif = GPS.round_gps_location(exif, args.gps_dp)
+        if args.gps_dp is not None and exif_dict is not None:
+            revised_exif = round_piexiv_gps(exif_dict, args.gps_dp)
 
         # Now gather the keywords implied by the image location and data
         image_id = extract_image_id_from_filename(basename)
         keywords = [f'library:fileId={image_id}']
 
-        if populated_keys_changed(exif, revised_exif):
+        if revised_exif:
+            for key in revised_exif:
+                exif_dict[key] = revised_exif[key]
+
             keywords.append(GPS_LOCATION_KEYWORD)  # human-readable
             keywords.append(f'gps:accuracy={args.gps_dp}dp')
+            # Save EXIF if changed
+            exif_bytes = piexif.dump(exif_dict)
+            im = Image.open(filename)
+            print('Save EXIF', exif_dict)
+            im.save(filename, exif=exif_bytes)
 
         # Find and apply subjects and keywords
-        iptc = image.read_iptc()
-        revised_iptc = revise_iptc(iptc, set(keywords))
+        iptc_changed = False
+        iptc = IPTCInfo(filename)
+        for keyword in keywords:
+            existing_keywords = [k.decode('utf-8') for k in iptc['keywords']]
+            if keyword not in existing_keywords:
+                iptc['keywords'].append(keyword.encode('utf-8'))
+                iptc_changed = True
 
-        if populated_keys_changed(exif, revised_exif) or populated_keys_changed(iptc, revised_iptc):
-            # We don't want to update (and change timestamp) if nothing changed
-            save_revised_image(image, basename, revised_exif, revised_iptc)
-        image.close()
+        # Is there already a subject?
+        subject = iptc['object name'].decode('utf-8') if iptc['object name'] else None
+        if not subject:
+            subject = find_subject_from_keywords([k.decode('utf-8') for k in iptc['keywords']])
+            if subject:
+                iptc['object name'] = subject.encode('utf-8')
+                iptc_changed = True
+
+        # Save IPTC if changed
+        if iptc_changed:
+            print('Save IPTC', iptc['object name'], iptc['keywords'])
+            iptc.save()
+            remove_iptcinfo_backup(filename)
 
         if args.rename:
             # If we can get a subject from revised or existing data, apply it to the name
-            subject = revised_iptc.get(IPTC_KEY_SUBJECT, iptc.get(IPTC_KEY_SUBJECT, None))
             if subject and not re.search(r'\([^)]{3,}\)', basename):
                 # FIXME: check that existing filename is not already present, use -N strategy if so
                 new_filename = source_file.with_name(f'{source_file.stem} ({subject}){source_file.suffix}')

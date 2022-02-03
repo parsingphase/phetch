@@ -1,26 +1,9 @@
 from typing import Dict, Tuple, cast
 
 Rational = Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
-EXIF_KEY_LATITUDE = 'Exif.GPSInfo.GPSLatitude'
-EXIF_KEY_LONGITUDE = 'Exif.GPSInfo.GPSLongitude'
-GPS_LOCATION_KEYWORD = 'Approximate GPS location'
 
 
 class GPS:
-    exif_keys = [
-        'Exif.GPSInfo.GPSVersionID',
-        'Exif.GPSInfo.GPSLatitudeRef',
-        'Exif.GPSInfo.GPSLatitude',
-        'Exif.GPSInfo.GPSLongitudeRef',
-        'Exif.GPSInfo.GPSLongitude',
-        'Exif.GPSInfo.GPSAltitudeRef',
-        'Exif.GPSInfo.GPSAltitude',
-        'Exif.GPSInfo.GPSTimeStamp',
-        'Exif.GPSInfo.GPSSatellites',
-        'Exif.GPSInfo.GPSMapDatum',
-        'Exif.GPSInfo.GPSDateStamp',
-    ]
-
     @staticmethod
     def string_to_exif_rational(text: str) -> Rational:
         """
@@ -59,29 +42,6 @@ class GPS:
         denominator = pow(10, minutes_dp)
         numerator = int(minutes * denominator)
         return f'{int_degrees}/1 {numerator}/{denominator} 0/1'
-
-    @staticmethod
-    def round_gps_location(exif, gps_dp: int) -> Dict:
-        """
-        Take the GPS EXIF data from the supplied image and rounds its lat/long to the specified number of decimal points
-        :param exif:
-        :param gps_dp:
-        :return:
-        """
-        revised_location = {}
-        if EXIF_KEY_LATITUDE not in exif or EXIF_KEY_LATITUDE not in exif:
-            return {}
-
-        lat = exif[EXIF_KEY_LATITUDE]
-        lon = exif[EXIF_KEY_LONGITUDE]
-
-        if lat:
-            revised_location[EXIF_KEY_LATITUDE] = GPS.round_dms_as_decimal(lat, gps_dp)
-
-        if lon:
-            revised_location[EXIF_KEY_LONGITUDE] = GPS.round_dms_as_decimal(lon, gps_dp)
-
-        return revised_location
 
     @staticmethod
     def round_dms_as_decimal(dms: str, gps_dp: int) -> str:

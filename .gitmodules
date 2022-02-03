@@ -1,0 +1,3 @@
+[submodule "local_libs/piexif"]
+	path = local_libs/piexif
+	url = https://github.com/hMatoba/Piexif.git

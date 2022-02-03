@@ -1,8 +1,8 @@
 import piexif
-from .gps import GPS
+from gps_tools.gps import GPS
 
 
-def get_clean_lat_long_from_piexif(exif_dict):
+def get_decimal_lat_long_from_piexif(exif_dict):
     """
     Parse a piexif dict to get lat, long as floats
     Args:
@@ -24,3 +24,14 @@ def get_clean_lat_long_from_piexif(exif_dict):
         pass
 
     return position
+
+
+def get_piexif_dms_from_decimal(lat_lng):
+    lat, lng = lat_lng
+    gps_fields = {
+        piexif.GPSIFD.GPSLatitudeRef: b'N' if lat > 0 else b'S',
+        piexif.GPSIFD.GPSLongitudeRef: b'E' if lat > 0 else b'W',
+        piexif.GPSIFD.GPSLatitude: GPS.degrees_float_to_dms_rational_string(abs(lat)),
+        piexif.GPSIFD.GPSLongitude: GPS.degrees_float_to_dms_rational_string(abs(lng))
+    }
+    return gps_fields

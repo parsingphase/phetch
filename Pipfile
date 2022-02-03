@@ -23,6 +23,8 @@ python-twitter = "*"
 pyshp = "*"
 iptcinfo3 = "*"
 typing-extensions = "*"
+pyproj = "*"
+shapely = "*"
 
 [requires]
 python_version = "3.9"
