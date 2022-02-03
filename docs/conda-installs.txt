@@ -1,0 +1,4 @@
+conda install -c conda-forge iptcinfo3
+conda install -c conda-forge piexif
+conda install shapely
+conda install pyproj pyshp
