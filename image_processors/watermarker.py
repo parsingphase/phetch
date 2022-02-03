@@ -6,6 +6,7 @@ from typing import Optional, Tuple
 from PIL import Image, ImageStat
 from PIL.ImageFile import ImageFile
 from iptcinfo3 import IPTCInfo
+from pathlib import Path
 
 
 def standard_save(image: Image, image_file_path: str):
@@ -50,7 +51,10 @@ def write_iptc(image_file_path: str, source_iptc: IPTCInfo):
         if source:
             dest_iptc[key] = source
 
-    dest_iptc.save() # causes filename~ to be created!
+    dest_iptc.save()  # causes filename~ to be created!
+    backup_file = Path(image_file_path + '~')
+    if backup_file.exists():
+        backup_file.unlink()
 
 
 def read_iptc(image_file_path: str) -> IPTCInfo:
