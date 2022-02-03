@@ -21,6 +21,8 @@ pillow = "~=8.1.1"
 pendulum = "*"
 python-twitter = "*"
 pyshp = "*"
+iptcinfo3 = "*"
+typing-extensions = "*"
 
 [requires]
 python_version = "3.9"

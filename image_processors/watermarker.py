@@ -3,9 +3,9 @@ Class file for Watermarker
 """
 from typing import Optional, Tuple
 
-import pyexiv2
 from PIL import Image, ImageStat
 from PIL.ImageFile import ImageFile
+from iptcinfo3 import IPTCInfo
 
 
 def standard_save(image: Image, image_file_path: str):
@@ -25,30 +25,42 @@ def standard_save(image: Image, image_file_path: str):
     )
 
 
-def write_iptc(image_file_path: str, iptc: dict):
+def write_iptc(image_file_path: str, source_iptc: IPTCInfo):
     """
-    Write iptc data to file
+    Write iptc data to file (bit of a hack if we use iptcinfo3 but pyexiv2 is increasingly a trash-fire to install)
 
     :param image_file_path:
-    :param iptc:
+    :param source_iptc:
     :return:
     """
-    exiv_image = pyexiv2.Image(image_file_path)
-    exiv_image.modify_iptc(iptc)
-    exiv_image.close()
+    dest_iptc = IPTCInfo(image_file_path, force=True)
+    iptc_keys = [
+        'supplemental category',
+        'keywords',
+        'contact',
+        'date created',
+        'digital creation date',
+        'time created',
+        'digital creation time',
+        'by-line',
+        'object name'
+    ]
+    for key in iptc_keys:
+        source = source_iptc[key]
+        if source:
+            dest_iptc[key] = source
+
+    dest_iptc.save() # causes filename~ to be created!
 
 
-def read_iptc(image_file_path: str) -> dict:
+def read_iptc(image_file_path: str) -> IPTCInfo:
     """
     Read iptc data from file
 
     :param image_file_path:
     :return:
     """
-    exiv_image = pyexiv2.Image(image_file_path)
-    iptc = exiv_image.read_iptc()
-    exiv_image.close()
-    return iptc
+    return IPTCInfo(image_file_path)
 
 
 class Watermarker:

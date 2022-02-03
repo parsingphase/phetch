@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Fetch one or more Flickr albums. Run with --help for details
+Watermark images in a directory. Run with --help for details
 """
 
 import argparse
