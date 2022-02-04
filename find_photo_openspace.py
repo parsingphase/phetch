@@ -10,7 +10,7 @@ import piexif
 from gps_tools import ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, \
     make_openspace_tag, load_custom_gpsvisualizer_polys_from_dir, lng_lat_point_from_lat_lng
 from iptcinfo3 import IPTCInfo
-from metadata_tools.iptc_utils import mute_iptcinfo_logger
+from metadata_tools.iptc_utils import mute_iptcinfo_logger, remove_iptcinfo_backup
 from metadata_tools.piexif_utils import get_decimal_lat_long_from_piexif
 
 SHAPEFILE = 'data/openspace/OPENSPACE_POLY'
@@ -79,6 +79,7 @@ def run_cli() -> None:
         print(image.name, lat_lng, place)
         if place:
             add_place_tag_to_file_iptc(iptc, place)
+            remove_iptcinfo_backup(image_file)
 
 
 def add_place_tag_to_file_iptc(iptc, place):

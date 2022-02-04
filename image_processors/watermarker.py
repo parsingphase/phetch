@@ -70,7 +70,7 @@ class Watermarker:
     Tool to add transparent watermark to images
     """
     long_edge_watermark_ratio: float
-    watermark: ImageFile
+    watermark: Image
     watermark_opacity: float
     watermark_brightness_threshold: int  # max target area brightness to use the "light" watermark
 

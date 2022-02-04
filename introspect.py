@@ -180,7 +180,6 @@ def run_cli() -> None:
 
         # Save IPTC if changed
         if iptc_changed:
-            print('Save IPTC', iptc['object name'], iptc['keywords'])
             iptc.save()
             remove_iptcinfo_backup(filename)
 
