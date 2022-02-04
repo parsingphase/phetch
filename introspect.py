@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 """
 Improve keywords and title organization for all images in a folder for upload to flickr, etc
 """
@@ -100,6 +101,7 @@ def remove_title_blocklist_keywords(keywords: List[str]) -> List[str]:
     """
     blocklist = [
         'Maine', 'Massachusetts', 'export', 'pelagic', 'TakenByEva', 'flash', 'Rhode Island', 'Connecticut',
+        'Cyanocitta cristata', 'unknown',
         'unidentified', 'scenic', 'Cambridge', 'Boston', GPS_LOCATION_KEYWORD
     ]
     up_blocklist = [k.upper() for k in blocklist]
@@ -110,7 +112,7 @@ def remove_title_blocklist_keywords(keywords: List[str]) -> List[str]:
 def find_subject_from_keywords(keywords: List[str]) -> Optional[str]:
     keywords = [k for k in keywords if ':' not in k]  # remove machine keywords
     keywords = remove_title_blocklist_keywords(keywords)  # remove blocklist
-    longest_keyword = max(keywords, key=len)
+    longest_keyword = max(keywords, key=len) if len(keywords) > 0 else None
     return longest_keyword
 
 

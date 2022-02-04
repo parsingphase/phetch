@@ -1,20 +1,23 @@
 #!/usr/bin/env python
+
 """
-Fetch one or more Flickr albums. Run with --help for details
+Find location names for images in a directory. Run with --help for details
 """
 
 import argparse
 from pathlib import Path
 import piexif
-from gps_tools import get_decimal_lat_long_from_piexif, ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, \
+from gps_tools import ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, \
     make_openspace_tag, load_custom_gpsvisualizer_polys_from_dir, lng_lat_point_from_lat_lng
 from iptcinfo3 import IPTCInfo
 from metadata_tools.iptc_utils import mute_iptcinfo_logger
+from metadata_tools.piexif_utils import get_decimal_lat_long_from_piexif
 
-SHAPEFILE = 'tmp/openspace/OPENSPACE_POLY'
+SHAPEFILE = 'data/openspace/OPENSPACE_POLY'
 POLYDIR = 'polyfiles'
 
 mute_iptcinfo_logger()
+
 
 def parse_cli_args() -> argparse.Namespace:
     """

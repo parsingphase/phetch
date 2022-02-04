@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 from PIL import Image, ImageStat
 from PIL.ImageFile import ImageFile
 from iptcinfo3 import IPTCInfo
-from pathlib import Path
+from metadata_tools.iptc_utils import remove_iptcinfo_backup
 
 
 def standard_save(image: Image, image_file_path: str):
@@ -53,7 +53,6 @@ def write_iptc(image_file_path: str, source_iptc: IPTCInfo):
 
     dest_iptc.save()  # causes filename~ to be created!
     remove_iptcinfo_backup(image_file_path)
-
 
 
 def read_iptc(image_file_path: str) -> IPTCInfo:
@@ -133,7 +132,7 @@ class Watermarker:
         :param input_file:
         :return:
         """
-        image: ImageFile = Image.open(input_file)
+        image: Image = Image.open(input_file)
         iptc = read_iptc(input_file)
         if max_edge is not None:
             if image.width > image.height:
