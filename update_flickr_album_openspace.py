@@ -1,13 +1,16 @@
+#!/usr/bin/env python
+
 from phetch_tools.init_flickr import init_flickr_client
 from gps_tools import ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, \
     make_openspace_tag, load_custom_gpsvisualizer_polys_from_dir, lng_lat_point_from_lat_lng
+import os
 import webbrowser
 
-SHAPEFILE = 'tmp/openspace/OPENSPACE_POLY'
+SHAPEFILE = 'data/openspace/OPENSPACE_POLY'
 SKIP_TO = None
 # ALBUM_ID = 72177720295678754  # Massachusetts Wildlife 2022
-ALBUM_ID = 72157717912633238  # Wildlife Showcase 2021
-# ALBUM_ID = 72177720295655372  # Massachusetts Birds 2022
+# ALBUM_ID = 72157717912633238  # Wildlife Showcase 2021
+ALBUM_ID = 72177720295655372  # Massachusetts Birds 2022
 POLYDIR = 'polyfiles'
 
 
@@ -19,60 +22,79 @@ def run_cli():
     if flickr.token_valid(perms='write'):
         print('Auth valid')
     else:
-        flickr_get_token(flickr, 'write')
-
-    album = flickr.photosets.getPhotos(photoset_id=ALBUM_ID)
-    photos = album['photoset']['photo']
-    # photo_ids = [p['id'] for p in photos]
-    finder = ShapefileLocationFinder(SHAPEFILE, EPSG_DATUM['NAD83'], 'SITE_NAME')
-    polygons = load_custom_gpsvisualizer_polys_from_dir(POLYDIR)
-
-    for photo in photos:
-        place = None
-        photo_id = photo['id']
-        if skip_until and (str(photo_id) != str(skip_until)):
-            print('Skip', photo_id, SKIP_TO)
-            continue
+        if os.environ['HOME'] == '/root':  # smells like docker
+            # Get a request token
+            flickr.get_request_token(oauth_callback='oob')
+            authorize_url = flickr.auth_url(perms='write')
+            print('Please open: \n' + authorize_url)
+            verifier = str(input('Verifier code: '))
+            flickr.get_access_token(verifier)
         else:
-            skip_until = None
+            flickr_get_token(flickr, 'write')
 
-        title = photo['title']
+    page = 0
+    while True:
+        page += 1
+        print(f'Fetch page {page}')
         try:
-            gps_data = flickr.photos.geo.getLocation(photo_id=photo_id)
-        except Exception:
-            print(photo_id, title, 'No GPS')
-            continue
+            album = flickr.photosets.getPhotos(photoset_id=ALBUM_ID, page=page)
+            photos = album['photoset']['photo']
+        except Exception as e:
+            photos = []
 
-        try:
-            photo_details = flickr.photos.getInfo(photo_id=photo_id)
-        except Exception:
-            print(photo_id, title, 'Flickr b0rked')
-            break
+        if len(photos) == 0:
+            print('Ran out of photos')
+        # photo_ids = [p['id'] for p in photos]
+        finder = ShapefileLocationFinder(SHAPEFILE, EPSG_DATUM['NAD83'], 'SITE_NAME')
+        polygons = load_custom_gpsvisualizer_polys_from_dir(POLYDIR)
 
-        tags = photo_details['photo']['tags']['tag']
-        tags_raw = [t['raw'] for t in tags]
+        for photo in photos:
+            place = None
+            photo_id = photo['id']
+            if skip_until and (str(photo_id) != str(skip_until)):
+                print('Skip', photo_id, SKIP_TO)
+                continue
+            else:
+                skip_until = None
 
-        openspace_tags = [t for t in tags_raw if match_openspace_tag(t)]
-        if len(openspace_tags) > 0:
-            print(photo_id, title, 'already tagged', openspace_tags)
-            continue
+            title = photo['title']
+            try:
+                gps_data = flickr.photos.geo.getLocation(photo_id=photo_id)
+            except Exception:
+                print(photo_id, title, 'No GPS')
+                continue
 
-        lat_lon = (float(gps_data['photo']['location']['latitude']), float(gps_data['photo']['location']['longitude']))
-
-        lng_lat_point = lng_lat_point_from_lat_lng(lat_lon)
-        for named_poly in polygons:
-            if named_poly['polygon'].contains(lng_lat_point):
-                place = named_poly['name']
-                print(f'Found {photo_id} in {place} polyfile')
+            try:
+                photo_details = flickr.photos.getInfo(photo_id=photo_id)
+            except Exception:
+                print(photo_id, title, 'Flickr b0rked')
                 break
 
-        if not place:
-            place = finder.place_from_lat_lng(lat_lon)
+            tags = photo_details['photo']['tags']['tag']
+            tags_raw = [t['raw'] for t in tags]
 
-        print(f'{photo_id}, {title}, {place}')
-        if place:
-            place_tag = make_openspace_tag(place)
-            flickr.photos.addTags(photo_id=photo_id, tags=place_tag)
+            openspace_tags = [t for t in tags_raw if match_openspace_tag(t)]
+            if len(openspace_tags) > 0:
+                print(photo_id, title, 'already tagged', openspace_tags)
+                continue
+
+            lat_lon = (
+                float(gps_data['photo']['location']['latitude']), float(gps_data['photo']['location']['longitude']))
+
+            lng_lat_point = lng_lat_point_from_lat_lng(lat_lon)
+            for named_poly in polygons:
+                if named_poly['polygon'].contains(lng_lat_point):
+                    place = named_poly['name']
+                    print(f'Found {photo_id} in {place} polyfile')
+                    break
+
+            if not place:
+                place = finder.place_from_lat_lng(lat_lon)
+
+            print(f'{photo_id}, {title}, {place}')
+            if place:
+                place_tag = make_openspace_tag(place)
+                flickr.photos.addTags(photo_id=photo_id, tags=place_tag)
 
 
 def flickr_get_token(flickr, perms='read'):
