@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-
+"""
+Update machine place tags in a given Flickr album. Selection is hardcoded.
+"""
 import os
 import webbrowser
 
@@ -18,6 +20,11 @@ POLYDIR = 'polyfiles'
 
 
 def run_cli() -> None:
+    """
+    Run script as CLI
+    Returns:
+
+    """
     skip_until = SKIP_TO
     flickr = init_flickr_client('./config.yml')
 
@@ -25,15 +32,7 @@ def run_cli() -> None:
     if flickr.token_valid(perms='write'):
         print('Auth valid')
     else:
-        if os.environ['HOME'] == '/root':  # smells like docker
-            # Get a request token
-            flickr.get_request_token(oauth_callback='oob')
-            authorize_url = flickr.auth_url(perms='write')
-            print('Please open: \n' + authorize_url)
-            verifier = str(input('Verifier code: '))
-            flickr.get_access_token(verifier)
-        else:
-            flickr_get_token(flickr, 'write')  # type: ignore
+        flickr_get_token(flickr, 'write')  # type: ignore
 
     page = 0
     while True:
@@ -58,8 +57,8 @@ def run_cli() -> None:
             if skip_until and (str(photo_id) != str(skip_until)):
                 print('Skip', photo_id, SKIP_TO)
                 continue
-            else:
-                skip_until = None
+
+            skip_until = None
 
             title = photo['title']
             try:
@@ -102,6 +101,15 @@ def run_cli() -> None:
 
 
 def flickr_get_token(flickr, perms='read'):
+    """
+    Get flickr token via browser
+    Args:
+        flickr:
+        perms:
+
+    Returns:
+
+    """
     if not flickr.token_valid(perms=perms):
         # Get a request token
         flickr.get_request_token(oauth_callback='oob')
@@ -109,7 +117,10 @@ def flickr_get_token(flickr, perms='read'):
         # Open a browser at the authentication URL. Do this however
         # you want, as long as the user visits that URL.
         authorize_url = flickr.auth_url(perms=perms)
-        webbrowser.open_new_tab(authorize_url)
+        if os.environ['HOME'] == '/root':  # smells like docker
+            print('Flickr auth required, please open: \n' + authorize_url)
+        else:
+            webbrowser.open_new_tab(authorize_url)
 
         # Get the verifier code from the user. Do this however you
         # want, as long as the user gives the application the code.

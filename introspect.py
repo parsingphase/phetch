@@ -113,20 +113,37 @@ def remove_title_blocklist_keywords(keywords: List[str]) -> List[str]:
 
 
 def find_subject_from_keywords(keywords: List[str]) -> Optional[str]:
+    """
+    Find the longest usable keyword in a list for use as a subject
+    Args:
+        keywords:
+
+    Returns:
+
+    """
     keywords = [k for k in keywords if ':' not in k]  # remove machine keywords
     keywords = remove_title_blocklist_keywords(keywords)  # remove blocklist
     longest_keyword = max(keywords, key=len) if len(keywords) > 0 else None
     return longest_keyword
 
 
-def round_piexiv_gps(exif_dict, dp) -> Optional[Dict]:
+def round_piexiv_gps(exif_dict, decimal_places) -> Optional[Dict]:
+    """
+    Round the GPS data (lat,lng) in the provided exif dict to the specified number of decimal places
+    Args:
+        exif_dict:
+        decimal_places:
+
+    Returns: Data changed if any
+
+    """
     revised_exif = None
     lat_long_from_piexif = get_decimal_lat_long_from_piexif(exif_dict)
     if lat_long_from_piexif:
         lat, lng = lat_long_from_piexif
         round_lat, round_lng = (
-            round(lat, dp),
-            round(lng, dp)
+            round(lat, decimal_places),
+            round(lng, decimal_places)
         )
         if (round_lat != lat) or (round_lng != lng):
             revised_exif = get_piexif_dms_from_decimal((round_lat, round_lng))
@@ -162,9 +179,9 @@ def run_cli() -> None:
             keywords.append(f'gps:accuracy={args.gps_dp}dp')
             # Save EXIF if changed
             exif_bytes = piexif.dump(exif_dict)  # type: ignore
-            im = Image.open(filename)
+            image = Image.open(filename)
             print('Save EXIF', exif_dict)
-            im.save(filename, exif=exif_bytes)
+            image.save(filename, exif=exif_bytes)
 
         # Find and apply subjects and keywords
         iptc_changed = False

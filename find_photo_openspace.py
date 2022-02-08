@@ -89,6 +89,15 @@ def run_cli() -> None:
 
 
 def add_place_tag_to_file_iptc(iptc, place) -> None:
+    """
+    Add a place name as a machine tag to the passed IPTC handler and save
+    Args:
+        iptc:
+        place:
+
+    Returns:
+
+    """
     tags = decode_tags(iptc)
     place_tag = make_openspace_tag(place)
     if place_tag not in tags:
@@ -97,12 +106,28 @@ def add_place_tag_to_file_iptc(iptc, place) -> None:
 
 
 def decode_tags(iptc) -> List[str]:
+    """
+    Extract keyword tags from IPTC handler and decode from bytes to utf-8
+    Args:
+        iptc:
+
+    Returns:
+
+    """
     raw_tags = iptc['keywords']
     tags = [k.decode('utf-8') for k in raw_tags]
     return tags
 
 
 def iptc_get_openspace_tag(iptc) -> Optional[str]:
+    """
+    Extract a recognized place machine tag, if any, from IPTC handler
+    Args:
+        iptc:
+
+    Returns:
+
+    """
     tags = decode_tags(iptc)
     openspace_tags = [t for t in tags if match_openspace_tag(t)]
     return openspace_tags[0] if len(openspace_tags) > 0 else None

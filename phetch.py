@@ -89,7 +89,7 @@ def run_cli() -> None:
     photo_list = args.save_photo_list
     if photo_list:
         ensure_dir(Path(photo_list).parent)
-        with open(photo_list, 'w') as json_out:
+        with open(photo_list, 'w', encoding='utf-8') as json_out:
             json.dump(photos, json_out)
             print(f"Wrote file list to {photo_list}")
 
