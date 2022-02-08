@@ -1,4 +1,5 @@
 from typing import Dict, Set
+
 from gps_tools.gps import GPS
 
 EXIF_KEY_LATITUDE = 'Exif.GPSInfo.GPSLatitude'

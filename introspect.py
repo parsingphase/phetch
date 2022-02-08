@@ -8,11 +8,15 @@ import argparse
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import piexif
-from metadata_tools.piexif_utils import get_decimal_lat_long_from_piexif, get_piexif_dms_from_decimal
+
 from iptcinfo3 import IPTCInfo
 from PIL import Image
-from metadata_tools.iptc_utils import mute_iptcinfo_logger, remove_iptcinfo_backup
+
+import piexif
+from metadata_tools.iptc_utils import (mute_iptcinfo_logger,
+                                       remove_iptcinfo_backup)
+from metadata_tools.piexif_utils import (get_decimal_lat_long_from_piexif,
+                                         get_piexif_dms_from_decimal)
 
 Rational = Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
 

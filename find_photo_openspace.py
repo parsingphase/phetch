@@ -6,13 +6,18 @@ Find location names for images in a directory. Run with --help for details
 
 import argparse
 from pathlib import Path
-import piexif
-from gps_tools import ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, \
-    make_openspace_tag, load_custom_gpsvisualizer_polys_from_dir, lng_lat_point_from_lat_lng
+from typing import List, Optional
+
 from iptcinfo3 import IPTCInfo
-from metadata_tools.iptc_utils import mute_iptcinfo_logger, remove_iptcinfo_backup
+
+import piexif
+from gps_tools import (EPSG_DATUM, ShapefileLocationFinder,
+                       lng_lat_point_from_lat_lng,
+                       load_custom_gpsvisualizer_polys_from_dir,
+                       make_openspace_tag, match_openspace_tag)
+from metadata_tools.iptc_utils import (mute_iptcinfo_logger,
+                                       remove_iptcinfo_backup)
 from metadata_tools.piexif_utils import get_decimal_lat_long_from_piexif
-from typing import Optional, List
 
 SHAPEFILE = 'data/openspace/OPENSPACE_POLY'
 POLYDIR = 'polyfiles'

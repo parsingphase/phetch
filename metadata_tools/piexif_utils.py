@@ -1,6 +1,7 @@
+from typing import Dict, Optional, Tuple
+
 import piexif
 from gps_tools.gps import GPS
-from typing import Optional, Tuple, Dict
 
 
 def get_decimal_lat_long_from_piexif(exif_dict) -> Optional[Tuple[float, float]]:

@@ -42,7 +42,7 @@ def run_cli() -> None:
         photos = json.loads(content)
     else:
         # Assume file
-        with open(args.json) as content_fp:
+        with open(args.json, encoding='utf-8') as content_fp:
             photos = json.load(content_fp)
 
     downloader = PhotoListFetcher()

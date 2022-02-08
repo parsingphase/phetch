@@ -7,8 +7,8 @@ import argparse
 from pathlib import Path
 
 from image_processors import Watermarker
-from phetch_tools import load_config
 from metadata_tools.iptc_utils import mute_iptcinfo_logger
+from phetch_tools import load_config
 
 mute_iptcinfo_logger()
 

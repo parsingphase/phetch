@@ -1,7 +1,8 @@
-from shapely.geometry.polygon import Polygon
-from shapely.geometry import Point
-from typing import TypedDict, List, Tuple
 from pathlib import Path
+from typing import List, Tuple, TypedDict
+
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 # NOTE: Points & polys here are LON-LAT, as per ESRI files
 NamedPolygon = TypedDict('NamedPolygon', {'name': str, 'polygon': Polygon})

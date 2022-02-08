@@ -1,5 +1,5 @@
-import shapefile
 import pyproj
+import shapefile
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 

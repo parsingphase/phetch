@@ -3,9 +3,10 @@ Class file for Watermarker
 """
 from typing import Optional, Tuple
 
+from iptcinfo3 import IPTCInfo
 from PIL import Image, ImageStat
 from PIL.ImageFile import ImageFile
-from iptcinfo3 import IPTCInfo
+
 from metadata_tools.iptc_utils import remove_iptcinfo_backup
 
 

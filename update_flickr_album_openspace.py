@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
-from phetch_tools.init_flickr import init_flickr_client
-from gps_tools import ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, \
-    make_openspace_tag, load_custom_gpsvisualizer_polys_from_dir, lng_lat_point_from_lat_lng
 import os
 import webbrowser
+
+from gps_tools import (EPSG_DATUM, ShapefileLocationFinder,
+                       lng_lat_point_from_lat_lng,
+                       load_custom_gpsvisualizer_polys_from_dir,
+                       make_openspace_tag, match_openspace_tag)
+from phetch_tools.init_flickr import init_flickr_client
 
 SHAPEFILE = 'data/openspace/OPENSPACE_POLY'
 SKIP_TO = None

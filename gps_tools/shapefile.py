@@ -1,8 +1,10 @@
-import shapefile
+from typing import List, Optional
+
 import pyproj
+import shapefile
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
-from typing import Optional, List
+
 from .datum import EPSG_DATUM
 
 
