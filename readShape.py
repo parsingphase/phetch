@@ -1,5 +1,7 @@
 import shapefile
 import pyproj
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 sf = shapefile.Reader("tmp/openspace/OPENSPACE_POLY")
 print(sf)
@@ -27,8 +29,6 @@ latLonToShapefile = pyproj.Transformer.from_crs(4326, 26986, always_xy=True)
 
 print(latLonToShapefile.transform(-71, 42))
 
-from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
 
 polygon = Polygon(sf.shape(1).points)  # create polygon
 point = Point(230255.15420000255, 904192.4510000013)  # create point

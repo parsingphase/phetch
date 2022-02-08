@@ -12,6 +12,7 @@ from gps_tools import ShapefileLocationFinder, EPSG_DATUM, match_openspace_tag, 
 from iptcinfo3 import IPTCInfo
 from metadata_tools.iptc_utils import mute_iptcinfo_logger, remove_iptcinfo_backup
 from metadata_tools.piexif_utils import get_decimal_lat_long_from_piexif
+from typing import Optional, List
 
 SHAPEFILE = 'data/openspace/OPENSPACE_POLY'
 POLYDIR = 'polyfiles'
@@ -58,7 +59,7 @@ def run_cli() -> None:
         if tag:
             print(f'{image_file} already tagged ({tag})')
             continue
-        exif_dict = piexif.load(image_file)
+        exif_dict = piexif.load(image_file)  # type: ignore
         lat_lng = get_decimal_lat_long_from_piexif(exif_dict)
         if not lat_lng:
             print(f'{image_file} has no GPS')
@@ -82,21 +83,21 @@ def run_cli() -> None:
             remove_iptcinfo_backup(image_file)
 
 
-def add_place_tag_to_file_iptc(iptc, place):
+def add_place_tag_to_file_iptc(iptc, place) -> None:
     tags = decode_tags(iptc)
     place_tag = make_openspace_tag(place)
-    if not place_tag in tags:
+    if place_tag not in tags:
         iptc['keywords'] += [place_tag.encode('utf-8')]
         iptc.save()
 
 
-def decode_tags(iptc):
+def decode_tags(iptc) -> List[str]:
     raw_tags = iptc['keywords']
     tags = [k.decode('utf-8') for k in raw_tags]
     return tags
 
 
-def iptc_get_openspace_tag(iptc):
+def iptc_get_openspace_tag(iptc) -> Optional[str]:
     tags = decode_tags(iptc)
     openspace_tags = [t for t in tags if match_openspace_tag(t)]
     return openspace_tags[0] if len(openspace_tags) > 0 else None

@@ -14,7 +14,7 @@ ALBUM_ID = 72177720295655372  # Massachusetts Birds 2022
 POLYDIR = 'polyfiles'
 
 
-def run_cli():
+def run_cli() -> None:
     skip_until = SKIP_TO
     flickr = init_flickr_client('./config.yml')
 
@@ -30,16 +30,17 @@ def run_cli():
             verifier = str(input('Verifier code: '))
             flickr.get_access_token(verifier)
         else:
-            flickr_get_token(flickr, 'write')
+            flickr_get_token(flickr, 'write')  # type: ignore
 
     page = 0
     while True:
         page += 1
         print(f'Fetch page {page}')
+        # noinspection PyBroadException
         try:
             album = flickr.photosets.getPhotos(photoset_id=ALBUM_ID, page=page)
             photos = album['photoset']['photo']
-        except Exception as e:
+        except Exception:
             photos = []
 
         if len(photos) == 0:

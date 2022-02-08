@@ -1,8 +1,9 @@
 import piexif
 from gps_tools.gps import GPS
+from typing import Optional, Tuple, Dict
 
 
-def get_decimal_lat_long_from_piexif(exif_dict):
+def get_decimal_lat_long_from_piexif(exif_dict) -> Optional[Tuple[float, float]]:
     """
     Parse a piexif dict to get lat, long as floats
     Args:
@@ -13,6 +14,7 @@ def get_decimal_lat_long_from_piexif(exif_dict):
     """
     position = None
 
+    # noinspection PyBroadException
     try:
         position = (
             (1 if exif_dict['GPS'][piexif.GPSIFD.GPSLatitudeRef] == b'N' else -1) *
@@ -20,13 +22,13 @@ def get_decimal_lat_long_from_piexif(exif_dict):
             (1 if exif_dict['GPS'][piexif.GPSIFD.GPSLongitudeRef] == b'E' else -1) *
             GPS.exif_rational_dms_to_float(exif_dict['GPS'][piexif.GPSIFD.GPSLongitude])
         )
-    except:
+    except Exception:
         pass
 
     return position
 
 
-def get_piexif_dms_from_decimal(lat_lng):
+def get_piexif_dms_from_decimal(lat_lng) -> Dict:
     lat, lng = lat_lng
     gps_fields = {
         piexif.GPSIFD.GPSLatitudeRef: b'N' if lat > 0 else b'S',

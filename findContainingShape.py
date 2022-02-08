@@ -5,14 +5,15 @@ from shapely.geometry.polygon import Polygon
 
 photoLatLng = (42.332508, -71.020932)
 
-def run_cli():
+
+def run_cli() -> None:
     shapefilePath = 'tmp/openspace/OPENSPACE_POLY'
     photo_place = find_lat_lng_shapefile_place(photoLatLng, shapefilePath)
 
     print(photo_place)
 
 
-def find_lat_lng_shapefile_place(photoLatLng, shapefilePath):
+def find_lat_lng_shapefile_place(photoLatLng, shapefilePath) -> str:
     lat_lon_to_shapefile = pyproj.Transformer.from_crs(4326, 26986, always_xy=True)
     photo_point = Point(lat_lon_to_shapefile.transform(photoLatLng[1], photoLatLng[0]))
     sf = shapefile.Reader(shapefilePath)

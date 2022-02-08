@@ -33,7 +33,7 @@ def read_polygon_from_gpsvisualizer_txt(filename: str) -> Polygon:
     return poly
 
 
-def load_custom_gpsvisualizer_polys_from_dir(dir: str) -> List[NamedPolygon]:
+def load_custom_gpsvisualizer_polys_from_dir(dir: str) -> List[Polygon]:
     """
     Load text files from a directory as Polygons with the name of the file
     Args:
@@ -65,7 +65,7 @@ def lng_lat_point_from_lat_lng(lat_lng: Tuple) -> Point:
     return Point(lat_lng[::-1]) if lat_lng else None
 
 
-def run_cli():
+def run_cli() -> None:
     # poly = read_polygon_from_gpsvisualizer_txt('polyfiles/Fresh Pond Reservation.txt')
     # point = Point(-71.150795, 42.389045)
     poly = load_custom_gpsvisualizer_polys_from_dir('polyfiles')[0]['polygon']

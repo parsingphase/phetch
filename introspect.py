@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import piexif
 from metadata_tools.piexif_utils import get_decimal_lat_long_from_piexif, get_piexif_dms_from_decimal
-from gps_tools import GPS
 from iptcinfo3 import IPTCInfo
 from PIL import Image
 from metadata_tools.iptc_utils import mute_iptcinfo_logger, remove_iptcinfo_backup
@@ -116,15 +115,17 @@ def find_subject_from_keywords(keywords: List[str]) -> Optional[str]:
     return longest_keyword
 
 
-def round_piexiv_gps(exif_dict, dp):
+def round_piexiv_gps(exif_dict, dp) -> Optional[Dict]:
     revised_exif = None
-    lat, lng = get_decimal_lat_long_from_piexif(exif_dict)
-    round_lat, round_lng = (
-        GPS.round_dms_as_decimal(lat, dp),
-        GPS.round_dms_as_decimal(lng, dp)
-    )
-    if (round_lat != lat) or (round_lng != lng):
-        revised_exif = get_piexif_dms_from_decimal((round_lat, round_lng))
+    lat_long_from_piexif = get_decimal_lat_long_from_piexif(exif_dict)
+    if lat_long_from_piexif:
+        lat, lng = lat_long_from_piexif
+        round_lat, round_lng = (
+            round(lat, dp),
+            round(lng, dp)
+        )
+        if (round_lat != lat) or (round_lng != lng):
+            revised_exif = get_piexif_dms_from_decimal((round_lat, round_lng))
     return revised_exif
 
 
@@ -138,7 +139,7 @@ def run_cli() -> None:
     for source_file in list(Path(args.dir).glob('*.jpg')):
         basename = source_file.name
         filename = str(source_file)
-        exif_dict = piexif.load(filename)
+        exif_dict = piexif.load(filename)  # type: ignore
         revised_exif = None
 
         # Revise location if specified
@@ -156,7 +157,7 @@ def run_cli() -> None:
             keywords.append(GPS_LOCATION_KEYWORD)  # human-readable
             keywords.append(f'gps:accuracy={args.gps_dp}dp')
             # Save EXIF if changed
-            exif_bytes = piexif.dump(exif_dict)
+            exif_bytes = piexif.dump(exif_dict)  # type: ignore
             im = Image.open(filename)
             print('Save EXIF', exif_dict)
             im.save(filename, exif=exif_bytes)
