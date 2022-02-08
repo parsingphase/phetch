@@ -9,4 +9,4 @@ def make_openspace_tag(place):
 
 
 def match_openspace_tag(tag):
-    return True if re.match(f'^{TAGNAME}=', tag) else False
+    return True if re.match(f'^"?{TAGNAME}=', tag) else False
