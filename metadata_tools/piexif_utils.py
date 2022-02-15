@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from dateutil.parser import parse
 from typing import Dict, Optional, Tuple
 
 import piexif
@@ -38,3 +41,23 @@ def get_piexif_dms_from_decimal(lat_lng) -> Dict:
         piexif.GPSIFD.GPSLongitude: GPS.degrees_float_to_dms_rational_string(abs(lng))
     }
     return gps_fields
+
+
+def get_date_taken(exif_dict) -> Optional[datetime]:
+    date = None
+    date_taken = None
+    tz_taken = None
+
+    if piexif.ExifIFD.DateTimeOriginal in exif_dict['Exif']:
+        date_taken = exif_dict['Exif'][piexif.ExifIFD.DateTimeOriginal]  # format b'2022:02:14 03:59:32'
+    if piexif.ExifIFD.OffsetTimeOriginal in exif_dict['Exif']:
+        tz_taken = exif_dict['Exif'][piexif.ExifIFD.OffsetTimeOriginal]  # format b'-05:00'
+
+    if date_taken is not None:
+        date_string = date_taken.decode('utf-8').replace(':', '-', 2)  # exif date separator is :
+        if tz_taken is not None:
+            date_string = date_string + ' ' + tz_taken.decode('utf-8')
+
+        date = parse(date_string)
+
+    return date

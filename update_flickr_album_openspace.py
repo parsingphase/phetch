@@ -102,7 +102,7 @@ def run_cli() -> None:
 
 def flickr_get_token(flickr, perms='read'):
     """
-    Get flickr token via browser
+    Get flickr token via browser, per https://stuvel.eu/flickrapi-doc/3-auth.html
     Args:
         flickr:
         perms:

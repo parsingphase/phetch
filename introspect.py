@@ -16,7 +16,7 @@ import piexif
 from metadata_tools.iptc_utils import (mute_iptcinfo_logger,
                                        remove_iptcinfo_backup)
 from metadata_tools.piexif_utils import (get_decimal_lat_long_from_piexif,
-                                         get_piexif_dms_from_decimal)
+                                         get_piexif_dms_from_decimal, get_date_taken)
 
 Rational = Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
 
@@ -70,7 +70,7 @@ def extract_image_id_from_filename(basename: str) -> Optional[str]:
     :param basename:
     :return:
     """
-    match = re.match(r'[^(\d]*(\d+)', basename)
+    match = re.match(r'^\S{4}(\d{4})', basename)
     return None if match is None else match.group(1)
 
 
@@ -169,7 +169,12 @@ def run_cli() -> None:
 
         # Now gather the keywords implied by the image location and data
         image_id = extract_image_id_from_filename(basename)
-        keywords = [f'library:fileId={image_id}']
+        serial_keyword = f'library:fileId={image_id}'
+        if exif_dict is not None:
+            date = get_date_taken(exif_dict)
+            if date:
+                serial_keyword += '-' + date.strftime('%Y%m%d')
+        keywords = [serial_keyword]
 
         if revised_exif:
             for key in revised_exif:
