@@ -142,7 +142,9 @@ class Watermarker:
             else:
                 ratio = max_edge / image.height
                 size = (round(image.width * ratio), max_edge)
-            image = image.resize(size, Image.LANCZOS)
+
+            if ratio < 1:
+                image = image.resize(size, Image.LANCZOS)
 
         image = self.watermark_image(image)
         standard_save(image, output_file)

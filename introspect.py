@@ -105,6 +105,7 @@ def remove_title_blocklist_keywords(keywords: List[str]) -> List[str]:
     blocklist = [
         'Maine', 'Massachusetts', 'export', 'pelagic', 'TakenByEva', 'flash', 'Rhode Island', 'Connecticut',
         'Cyanocitta cristata', 'unknown', 'Larinae',
+        'juvenile',
         'unidentified', 'scenic', 'Cambridge', 'Boston', GPS_LOCATION_KEYWORD
     ]
     up_blocklist = [k.upper() for k in blocklist]

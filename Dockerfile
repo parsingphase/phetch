@@ -13,4 +13,4 @@ WORKDIR /root/phetch
 ENV SHELL=/bin/bash
 RUN pipenv --python 3.9 install
 
-CMD pipenv shell
+CMD pipenv install && pipenv shell
