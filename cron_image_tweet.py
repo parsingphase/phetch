@@ -23,7 +23,7 @@ from phetch_tools import init_flickr_client, load_config
 ScheduledId = TypedDict('ScheduledId', {'photo_id': str, 'date_str': str})
 SimpleTweet = TypedDict('SimpleTweet', {'text': str, 'media': str})
 
-DEFAULT_HASHTAG = '#test'
+DEFAULT_HASHTAG = '#DailyBird'
 
 
 class UniquenessError(Exception):
@@ -390,7 +390,7 @@ def lambda_handler(event: Any, context: Any):
 
 
 if __name__ == '__main__':
-    if sys.argv[1] == '--lambda':
+    if (len(sys.argv) > 1) and sys.argv[1] == '--lambda':
         lambda_handler(None, None)
     else:
         run_cli()

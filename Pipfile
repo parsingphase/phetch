@@ -25,6 +25,7 @@ iptcinfo3 = "*"
 typing-extensions = "*"
 pyproj = "*"
 shapely = "*"
+"mastodon.py" = "*"
 
 [requires]
 python_version = "3.9"
