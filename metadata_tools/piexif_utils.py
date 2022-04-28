@@ -1,7 +1,7 @@
 from datetime import datetime
+from typing import Dict, Optional, Tuple
 
 from dateutil.parser import parse
-from typing import Dict, Optional, Tuple
 
 import piexif
 from gps_tools.gps import GPS

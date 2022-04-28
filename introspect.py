@@ -15,8 +15,9 @@ from PIL import Image
 import piexif
 from metadata_tools.iptc_utils import (mute_iptcinfo_logger,
                                        remove_iptcinfo_backup)
-from metadata_tools.piexif_utils import (get_decimal_lat_long_from_piexif,
-                                         get_piexif_dms_from_decimal, get_date_taken)
+from metadata_tools.piexif_utils import (get_date_taken,
+                                         get_decimal_lat_long_from_piexif,
+                                         get_piexif_dms_from_decimal)
 
 Rational = Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
 

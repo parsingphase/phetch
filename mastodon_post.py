@@ -11,11 +11,11 @@ from typing import List
 import requests
 from mastodon import Mastodon
 
-from cron_image_tweet import (ScheduledId, SimpleTweet,
-                              build_tweet_by_flickr_photo_id,
-                              get_due_item_from_schedule,
-                              scan_file_for_coded_filenames)
 from phetch_tools import load_config
+from phetch_tools.social import (ScheduledId, SimpleTweet,
+                                 build_tweet_by_flickr_photo_id,
+                                 get_due_item_from_schedule,
+                                 scan_file_for_coded_filenames)
 
 DEFAULT_HASHTAG = '#DailyBird'
 
