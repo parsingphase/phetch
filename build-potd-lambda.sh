@@ -3,7 +3,7 @@
 set -e
 
 CONFIG_FILE="config.yml"
-SOURCE_FILES="cron_image_tweet.py phetch.py phetch_tools potd_schedules/*.txt"
+SOURCE_FILES="cron_image_tweet.py phetch.py mastodon_post.py phetch_tools potd_schedules/*.txt"
 AWSREGION="us-east-1"
 LAMBDA_NAME="postBirdOfTheDayTweet"
 

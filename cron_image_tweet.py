@@ -18,12 +18,14 @@ import twitter
 from dateutil.parser import parse
 from typing_extensions import TypedDict
 
+from mastodon_post import post_toot_from_schedule
 from phetch_tools import init_flickr_client, load_config
 
 ScheduledId = TypedDict('ScheduledId', {'photo_id': str, 'date_str': str})
 SimpleTweet = TypedDict('SimpleTweet', {'text': str, 'media': str})
 
 DEFAULT_HASHTAG = '#DailyBird'
+DEFAULT_SERVICE = 'twitter'
 
 
 class UniquenessError(Exception):
@@ -379,6 +381,9 @@ def lambda_handler(event: Any, context: Any):
     :param context:
     :return:
     """
+    print('event', event)
+    service = event['service'] if 'service' in event else DEFAULT_SERVICE
+
     source_file = getenv('POTD_SCHEDULE_FILE')
     dry_run = bool(getenv('POTD_DRY_RUN'))
     hashtag = getenv('POTD_HASHTAG', '')
@@ -386,7 +391,13 @@ def lambda_handler(event: Any, context: Any):
         print('POTD_SCHEDULE_FILE environmental variable must be defined')
         sys.exit(1)
     schedule = scan_file_for_coded_filenames(Path(source_file))
-    post_tweet_from_schedule(schedule, hashtag, dry_run)
+
+    if service == 'mastodon':
+        post_toot_from_schedule(schedule, hashtag)
+    elif service == 'twitter':
+        post_tweet_from_schedule(schedule, hashtag, dry_run)
+    else:
+        raise Exception(f'Invalid service "{service}" specified')
 
 
 if __name__ == '__main__':

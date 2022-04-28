@@ -9,3 +9,4 @@ build/fetcher_distro_scripts/*.sh
 potd_schedules
 thumbnail.jpg
 phetch-personal-scripts
+.*.secret

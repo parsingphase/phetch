@@ -12,4 +12,4 @@ SCRIPT_DIR="$( get_script_dir )"
 cd "${SCRIPT_DIR}"
 
 docker build . -t localpython
-docker run -it --rm -v ${SCRIPT_DIR}:/root/phetch -v /Users/wechsler/Pictures/Exports:/mnt/photos localpython
+docker run -it --rm -v ${SCRIPT_DIR}:/root/phetch -v /Users/wechsler/Pictures/Exports:/mnt/photos -v /Users/wechsler/.aws:/root/.aws localpython

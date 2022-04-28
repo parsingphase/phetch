@@ -1,19 +1,35 @@
 #!/usr/bin/env python
+"""
+Script to post images to Mastodon
+"""
 import re
+import sys
 from os.path import exists
 from pathlib import Path
+from typing import List
 
 import requests
 from mastodon import Mastodon
 
-from cron_image_tweet import (SimpleTweet, build_tweet_by_flickr_photo_id,
+from cron_image_tweet import (ScheduledId, SimpleTweet,
+                              build_tweet_by_flickr_photo_id,
                               get_due_item_from_schedule,
                               scan_file_for_coded_filenames)
 from phetch_tools import load_config
 
 DEFAULT_HASHTAG = '#DailyBird'
 
-def init_mastodon_client(config_file):
+
+def init_mastodon_client(config_file) -> Mastodon:
+    """
+    Initialize client from provided config file
+
+    Args:
+        config_file:
+
+    Returns:
+
+    """
     mastodon_config = load_config(config_file)['mastodon']
 
     mastodon = Mastodon(
@@ -25,7 +41,7 @@ def init_mastodon_client(config_file):
     mastodon.log_in(
         mastodon_config['user_email'],
         mastodon_config['user_password'],
-        to_file='tmp/pytooter_usercred.secret',
+        to_file='.pytooter_usercred.secret',
         scopes=['write']
     )
 
@@ -34,48 +50,72 @@ def init_mastodon_client(config_file):
     return mastodon
 
 
-def main():
-    source_file = 'data/2022.txt'
-    schedule = scan_file_for_coded_filenames(Path(source_file))
-    due_photo = get_due_item_from_schedule(schedule)
+def run_cli() -> None:
+    """
+    Run script as CLI
+    Returns:
 
+    """
+    source_file = 'data/2022.txt'
+    post_toot_from_schedule_file(source_file)
+
+
+def post_toot_from_schedule_file(source_file) -> None:
+    """
+    Post toot from specified schedule file
+
+    Args:
+        source_file:
+
+    Returns:
+
+    """
+    schedule = scan_file_for_coded_filenames(Path(source_file))
+    post_toot_from_schedule(schedule)
+
+
+def post_toot_from_schedule(schedule: List[ScheduledId], hashtag: str = '') -> None:
+    """
+    Check for a due toot, build and post it
+    Compare post_tweet_from_schedule
+
+    :param hashtag:
+    :param schedule:
+    :return:
+    """
+    due_photo = get_due_item_from_schedule(schedule)
     if not due_photo:
         print('No tweet scheduled')
-        exit(1)
-
-    tweet: SimpleTweet = build_tweet_by_flickr_photo_id(due_photo['photo_id'], DEFAULT_HASHTAG)
-    # print(tweet)
-
+        sys.exit(1)
+    tweet: SimpleTweet = build_tweet_by_flickr_photo_id(due_photo['photo_id'], hashtag)
     mastodon = init_mastodon_client('./config.yml')
-    #
-    # image = 'data/dove.jpg'
-    # image = 'https://live.staticflickr.com/65535/52030791295_e46c7f9dbe_k_d.jpg'
-    # text = '#dailybird client development test'
     post_image_status(mastodon, tweet['media'], tweet['text'])
-
-    # url = 'https://live.staticflickr.com/65535/52030402433_1c98d509c0_k_d.jpg'
-    # response = requests.get(url, allow_redirects=True)
-    # print(response.headers)
-    # content_type = response.headers['Content-Type']
-    # file_content = response.content
+    print('Tooted', tweet)
 
 
-def post_image_status(mastodon, image, text):
+def post_image_status(mastodon, image, text) -> None:
+    """
+    Post an image and text as a toot
+
+    Args:
+        mastodon:
+        image:
+        text:
+
+    Returns:
+
+    """
     if re.match('^http(s?):', image):
         response = requests.get(image, allow_redirects=True)
-        # print(response.headers)
         content_type = response.headers['Content-Type']
         file_content = response.content
         media = mastodon.media_post(file_content, mime_type=content_type)
     elif exists(image):
         media = mastodon.media_post(image)
     else:
-        raise f'File or URL {image} not found'
-
-    # print(media)
-    # {'id': 108206266800599344, 'type': 'image', 'url': 'https://files.mastodon.social/media_attachments/files/108/206/266/800/599/344/original/4b19b949463832ea.jpg', 'preview_url': 'https://files.mastodon.social/media_attachments/files/108/206/266/800/599/344/small/4b19b949463832ea.jpg', 'remote_url': None, 'preview_remote_url': None, 'text_url': None, 'meta': {'original': {'width': 1763, 'height': 1176, 'size': '1763x1176', 'aspect': 1.4991496598639455}, 'small': {'width': 490, 'height': 327, 'size': '490x327', 'aspect': 1.4984709480122325}}, 'description': None, 'blurhash': 'USKK4u~W-pxa4ot7t7RkMyIoNHxuRPM{smNH'}
+        raise Exception(f'File or URL {image} not found')
     mastodon.status_post(text, media_ids=[media['id']])
 
 
 if __name__ == '__main__':
-    main()
+    run_cli()
