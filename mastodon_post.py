@@ -41,7 +41,6 @@ def init_mastodon_client(config_file) -> Mastodon:
     mastodon.log_in(
         mastodon_config['user_email'],
         mastodon_config['user_password'],
-        to_file='.pytooter_usercred.secret',
         scopes=['write']
     )
 
