@@ -3,7 +3,7 @@ FROM python:3.9-buster
 MAINTAINER Richard George <richard@phase.org>
 
 RUN apt-get update
-RUN apt install -y pipenv virtualenv python-pyexiv2 zip
+RUN apt install -y pipenv virtualenv python-pyexiv2 zip libgeos-dev
 
 VOLUME /root/phetch
 VOLUME /mnt/photos
