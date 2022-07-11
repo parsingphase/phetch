@@ -19,7 +19,14 @@ from metadata_tools.iptc_utils import (mute_iptcinfo_logger,
                                        remove_iptcinfo_backup)
 from metadata_tools.piexif_utils import get_decimal_lat_long_from_piexif
 
-SHAPEFILE = 'data/openspace/OPENSPACE_POLY'
+MA_SHAPEFILE = 'data/openspace/OPENSPACE_POLY'
+MA_DATUM = EPSG_DATUM['NAD83']
+MA_NAME_FIELD = 'SITE_NAME'
+
+NPS_SHAPEFILE = 'data/NPS_-_Land_Resources_Division_Boundary_and_Tract_Data_Service/NPS_-_Land_Resources_Division_Boundary_and_Tract_Data_Service'
+NPS_NAME_FIELD = 'UNIT_NAME'
+NPS_DATUM = 3857  #EPSG_DATUM['WGS84']  #probably!
+
 POLYDIR = 'polyfiles'
 
 mute_iptcinfo_logger()
@@ -53,7 +60,9 @@ def run_cli() -> None:
 
     source_files = list(source_dir.glob('*.jpg')) + list(source_dir.glob('*.jpeg'))
 
-    finder = ShapefileLocationFinder(SHAPEFILE, EPSG_DATUM['NAD83'], 'SITE_NAME')
+    mass_finder = ShapefileLocationFinder(MA_SHAPEFILE, MA_DATUM, MA_NAME_FIELD)
+    nps_finder = ShapefileLocationFinder(NPS_SHAPEFILE, NPS_DATUM, NPS_NAME_FIELD)
+
     polygons = load_custom_gpsvisualizer_polys_from_dir(POLYDIR)
 
     for image in source_files:
@@ -78,9 +87,14 @@ def run_cli() -> None:
                 break
 
         if not place:
-            place = finder.place_from_lat_lng(lat_lng) if lat_lng else None
+            place = mass_finder.place_from_lat_lng(lat_lng) if lat_lng else None
             if place:
-                print(f'Found {image_file} in {place} by finder')
+                print(f'Found {image_file} in {place} by MA finder')
+
+        if not place:
+            place = nps_finder.place_from_lat_lng(lat_lng) if lat_lng else None
+            if place:
+                print(f'Found {image_file} in {place} by NPS finder')
 
         print(image.name, lat_lng, place)
         if place:
