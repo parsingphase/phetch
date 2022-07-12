@@ -17,3 +17,12 @@ eg on https://public-nps.opendata.arcgis.com/datasets/nps::nps-boundary-1/about
 or https://public-nps.opendata.arcgis.com/datasets/nps::nps-boundary-1/explore?location=12.437250%2C-12.497900%2C2.88
 
 View Data Source => Extent => Spatial Reference: 102100 (3857)
+
+## Sources
+
+ * https://public-nps.opendata.arcgis.com/search?collection=Dataset&amp;q=boundaries
+ * https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-download
+ * https://mnatlas.org/metadata/PADUS2_1_fee_designation_easement.html#:~:text=Spatial%20Reference%20Information%3A
+   - has coord ref for PAD-US, found at https://www.google.com/search?q=pad-us+coordinate+system - EPSG 5070?
+ * https://maps.usgs.gov/padus/
+ * 
