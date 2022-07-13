@@ -75,11 +75,14 @@ class ShapefileLocationFinder:
                             record_matches(record, 'Unit_Nm', 'Field Office') or \
                             record_matches(record, 'Des_Tp', 'MIL') or \
                             record[self.place_name_field] == 'Park':
-                        # record_matches(record, 'Own_Name', 'OTHS') or \
+                        # record_matches(record, 'Own_Name', 'OTHS') or \ # Can include reserves
+                        # print('Excluded')
+                        # pprint(record.as_dict())
                         continue
                     elif record_matches(record, 'FeatClass', 'Proclamation'):
                         fallback = record[self.place_name_field]
                     else:
+                        # print('Match')
                         # pprint(record.as_dict())
                         # fallback = record[self.place_name_field]
                         return record[self.place_name_field]

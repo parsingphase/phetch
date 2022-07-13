@@ -16,15 +16,15 @@ def shapefile(name: str, filename: str, name_field: str) -> ShapefileSpec:
 
 shapefiles: List[ShapefileSpec] = [
     shapefile(
-        'PAD-US MA',
-        'data/PADUS3_0_State_MA_SHP/PADUS3_0Combined_StateMA.shp',
-        'Unit_Nm'
-    ),
-
-    shapefile(
         'Openspace MA',
         'data/openspace/OPENSPACE_POLY.shp',
         'SITE_NAME'
+    ),
+
+    shapefile(
+        'PAD-US MA',
+        'data/PADUS3_0_State_MA_SHP/PADUS3_0Combined_StateMA.shp',
+        'Unit_Nm'
     ),
 
     shapefile(
