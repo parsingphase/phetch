@@ -31,3 +31,4 @@ View Data Source => Extent => Spatial Reference: 102100 (3857)
  * https://maps.usgs.gov/padus/
  * https://marineprotectedareas.noaa.gov/dataanalysis/mpainventory/
  * https://geodata.lib.berkeley.edu/catalog/stanford-fh590cs4244
+ * https://native-land.ca/resources/api-docs/
