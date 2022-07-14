@@ -54,7 +54,7 @@ def main():
         territories.sort()
         territory_list = list_to_punctuated_string(territories)
 
-        print(lat_lng, territory_list)
+        print(lat_lng, territory_list + ' native land' if territory_list else '')
 
 
 def list_to_punctuated_string(territories):

@@ -48,7 +48,7 @@ def run_cli() -> None:
         if len(photos) == 0:
             print('Ran out of photos')
         # photo_ids = [p['id'] for p in photos]
-        finder = ShapefileLocationFinder(SHAPEFILE, EPSG_DATUM['NAD83'], 'SITE_NAME')
+        finder = ShapefileLocationFinder(SHAPEFILE, 'SITE_NAME')
         polygons = load_custom_gpsvisualizer_polys_from_dir(POLYDIR)
 
         for photo in photos:

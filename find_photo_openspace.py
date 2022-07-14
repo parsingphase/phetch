@@ -11,10 +11,12 @@ from typing import List, Optional
 from iptcinfo3 import IPTCInfo
 
 import piexif
-from gps_tools import (EPSG_DATUM, ShapefileLocationFinder,
+from gps_tools import (ShapefileLocationFinder,
+                       list_to_punctuated_string,
                        lng_lat_point_from_lat_lng,
                        load_custom_gpsvisualizer_polys_from_dir,
-                       make_openspace_tag, match_openspace_tag)
+                       load_native_lands_polys_from_file,
+                       make_openspace_tag, match_openspace_tag, make_lands_tag)
 from metadata_tools.iptc_utils import (mute_iptcinfo_logger,
                                        remove_iptcinfo_backup)
 from metadata_tools.piexif_utils import get_decimal_lat_long_from_piexif
@@ -22,6 +24,7 @@ from metadata_tools.piexif_utils import get_decimal_lat_long_from_piexif
 from shapefile_list import shapefiles
 
 POLYDIR = 'polyfiles'
+NATIVE_LANDS_JSON_FILE = 'data/indigenousTerritories.json'
 
 mute_iptcinfo_logger()
 
@@ -54,10 +57,13 @@ def run_cli() -> None:
 
     source_files = list(source_dir.glob('*.jpg')) + list(source_dir.glob('*.jpeg'))
 
-    polygons = load_custom_gpsvisualizer_polys_from_dir(POLYDIR)
+    drawn_polygons = load_custom_gpsvisualizer_polys_from_dir(POLYDIR)
+    lands_polygons = load_native_lands_polys_from_file(NATIVE_LANDS_JSON_FILE)
 
     for image in source_files:
         place = None
+        territories_string = None
+
         image_file = str(image)
         iptc = IPTCInfo(image_file)
         tag = iptc_get_openspace_tag(iptc)
@@ -71,7 +77,17 @@ def run_cli() -> None:
             continue
 
         lng_lat_point = lng_lat_point_from_lat_lng(lat_lng)
-        for named_poly in polygons:
+
+        territories = []
+        for territory in lands_polygons:
+            if territory['polygon'].contains(lng_lat_point):
+                territories.append(territory['name'])
+
+        if len(territories) > 0:
+            territories_string = list_to_punctuated_string(territories)
+            print(f'Found {image_file} in {territories_string} territory')
+
+        for named_poly in drawn_polygons:
             if named_poly['polygon'].contains(lng_lat_point):
                 place = named_poly['name']
                 print(f'Found {image_file} in {place} polyfile')
@@ -86,10 +102,14 @@ def run_cli() -> None:
                     print(f'Found {image_file} in {finder_name} finder')
                     break
 
-        print(image.name, lat_lng, place)
+        print(image.name, lat_lng, place, '/', territories_string)
         if place:
             add_place_tag_to_file_iptc(iptc, place)
-            remove_iptcinfo_backup(image_file)
+
+        if territories_string:
+            add_lands_tag_to_file_iptc(iptc, territories_string)
+
+        remove_iptcinfo_backup(image_file)
 
 
 def add_place_tag_to_file_iptc(iptc, place) -> None:
@@ -106,6 +126,23 @@ def add_place_tag_to_file_iptc(iptc, place) -> None:
     place_tag = make_openspace_tag(place)
     if place_tag not in tags:
         iptc['keywords'] += [place_tag.encode('utf-8')]
+        iptc.save()
+
+
+def add_lands_tag_to_file_iptc(iptc, lands) -> None:
+    """
+    Add a native lands name as a machine tag to the passed IPTC handler and save
+    Args:
+        iptc:
+        lands:
+
+    Returns:
+
+    """
+    tags = decode_tags(iptc)
+    lands_tag = make_lands_tag(lands)
+    if lands_tag not in tags:
+        iptc['keywords'] += [lands_tag.encode('utf-8')]
         iptc.save()
 
 

@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import List, Tuple, TypedDict
+import json
 
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
@@ -54,6 +55,35 @@ def load_custom_gpsvisualizer_polys_from_dir(dir: str) -> List[Polygon]:
     return polys
 
 
+def load_native_lands_polys_from_file(data_file: str) -> List[Polygon]:
+    """
+    Load text files from a directory as Polygons with the name of the file
+    Args:
+        dir:
+
+    Returns:
+
+    """
+    polys = []
+
+    with open(data_file, 'r') as myfile:
+        text = myfile.read()
+
+    data = json.loads(text)
+
+    for feature in data['features']:
+        if 'Name' in feature['properties']:
+            name = feature['properties']['Name']
+            boundaries = feature['geometry']['coordinates']  # points are lng, lat
+            # print(name, feature['properties']['description'], boundaries)
+            for boundary in boundaries:
+                if len(boundary) >= 3:
+                    polygon = Polygon(boundary)
+                    polys.append({'name': name, 'polygon': polygon})
+
+    return polys
+
+
 def lng_lat_point_from_lat_lng(lat_lng: Tuple) -> Point:
     """
     Generate a lng-lat Point from a lat-lng Tuple
@@ -64,6 +94,13 @@ def lng_lat_point_from_lat_lng(lat_lng: Tuple) -> Point:
 
     """
     return Point(lat_lng[::-1]) if lat_lng else None
+
+
+def list_to_punctuated_string(list):
+    punctuated_string = ''
+    if len(list) > 1:
+        punctuated_string = ', '.join(list[0:-1]) + ' & ' + list[-1]
+    return punctuated_string
 
 
 def run_cli() -> None:
