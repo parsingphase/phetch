@@ -20,7 +20,7 @@ from phetch_tools.social import (ScheduledId, SimpleTweet,
                                  scan_file_for_coded_filenames,
                                  scan_path_for_coded_filenames)
 
-DEFAULT_HASHTAG = '#DailyBird'
+DEFAULT_HASHTAG = '#DailyBird #BirdPhotography'
 DEFAULT_SERVICE = 'twitter'
 
 

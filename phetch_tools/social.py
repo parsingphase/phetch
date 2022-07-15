@@ -124,11 +124,18 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
     if len(locale_string) > 0:
         locale_string = '\n' + locale_string
 
+    native_territory = get_tagged_lands(info)
+    if native_territory and (len(native_territory) > 0):
+        locale_string = locale_string + f'\n{native_territory} traditional territory'
+
     properties_string = get_photo_properties_string(flickr, photo_id)
     if len(properties_string) > 0:
         properties_string = '\n' + properties_string
 
-    text = f'{title}, {friendly_date}{locale_string}{properties_string}\n{hashtag}'
+    text = f'{title}, {friendly_date}{locale_string}{properties_string}'
+
+    if len(text) + len(hashtag) < 280:
+        text = text + f'\n{hashtag}'
 
     print(f'Text length: {len(text)}')
 
@@ -148,10 +155,27 @@ def get_tagged_place(info) -> Optional[str]:
     Returns:
 
     """
+    return get_machine_tag(info, 'geo:place')
+
+
+def get_tagged_lands(info) -> Optional[str]:
+    """
+    Find a geo:place tag from image's flickr info
+
+    Args:
+        info:
+
+    Returns:
+
+    """
+    return get_machine_tag(info, 'geo:native_territory')
+
+
+def get_machine_tag(info, tag_label):
     tags = info['photo']['tags']['tag']
-    place_tags = [t['raw'] for t in tags if t['raw'].startswith('geo:place=')]
-    tagged_place = place_tags[0].replace('geo:place=', '') if len(place_tags) > 0 else None
-    return tagged_place
+    matched_tag = [t['raw'] for t in tags if t['raw'].startswith(f'{tag_label}=')]
+    tag_value = matched_tag[0].replace(f'{tag_label}=', '') if len(matched_tag) > 0 else None
+    return tag_value
 
 
 def first(values) -> Any:

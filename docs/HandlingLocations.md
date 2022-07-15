@@ -31,4 +31,9 @@ View Data Source => Extent => Spatial Reference: 102100 (3857)
  * https://maps.usgs.gov/padus/
  * https://marineprotectedareas.noaa.gov/dataanalysis/mpainventory/
  * https://geodata.lib.berkeley.edu/catalog/stanford-fh590cs4244
+
+## Native lands
+ “I want to acknowledge that we are on the traditional territory of (nation names).”
+
+ * https://native-land.ca/resources/territory-acknowledgement/
  * https://native-land.ca/resources/api-docs/
