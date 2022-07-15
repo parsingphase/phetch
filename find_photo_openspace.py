@@ -84,6 +84,7 @@ def run_cli() -> None:
                 territories.append(territory['name'])
 
         if len(territories) > 0:
+            territories.sort()
             territories_string = list_to_punctuated_string(territories)
             print(f'Found {image_file} in {territories_string} territory')
 

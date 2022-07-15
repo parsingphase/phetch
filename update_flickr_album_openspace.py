@@ -5,18 +5,22 @@ Update machine place tags in a given Flickr album. Selection is hardcoded.
 import os
 import webbrowser
 
-from gps_tools import (EPSG_DATUM, ShapefileLocationFinder,
+from gps_tools import (ShapefileLocationFinder,
                        lng_lat_point_from_lat_lng,
+                       list_to_punctuated_string,
                        load_custom_gpsvisualizer_polys_from_dir,
-                       make_openspace_tag, match_openspace_tag)
+                       load_native_lands_polys_from_file,
+                       make_openspace_tag, match_openspace_tag,
+                       make_lands_tag, match_lands_tag)
 from phetch_tools.init_flickr import init_flickr_client
+from shapefile_list import shapefiles
 
-SHAPEFILE = 'data/openspace/OPENSPACE_POLY'
 SKIP_TO = None
 # ALBUM_ID = 72177720295678754  # Massachusetts Wildlife 2022
 # ALBUM_ID = 72157717912633238  # Wildlife Showcase 2021
 ALBUM_ID = 72177720295655372  # Massachusetts Birds 2022
 POLYDIR = 'polyfiles'
+NATIVE_LANDS_JSON_FILE = 'data/indigenousTerritories.json'
 
 
 def run_cli() -> None:
@@ -47,9 +51,11 @@ def run_cli() -> None:
 
         if len(photos) == 0:
             print('Ran out of photos')
+            break
+
         # photo_ids = [p['id'] for p in photos]
-        finder = ShapefileLocationFinder(SHAPEFILE, 'SITE_NAME')
-        polygons = load_custom_gpsvisualizer_polys_from_dir(POLYDIR)
+        drawn_polygons = load_custom_gpsvisualizer_polys_from_dir(POLYDIR)
+        lands_polygons = load_native_lands_polys_from_file(NATIVE_LANDS_JSON_FILE)
 
         for photo in photos:
             place = None
@@ -67,6 +73,11 @@ def run_cli() -> None:
                 print(photo_id, title, 'No GPS')
                 continue
 
+            lat_lon = (
+                float(gps_data['photo']['location']['latitude']), float(gps_data['photo']['location']['longitude']))
+
+            lng_lat_point = lng_lat_point_from_lat_lng(lat_lon)
+
             try:
                 photo_details = flickr.photos.getInfo(photo_id=photo_id)
             except Exception:
@@ -78,26 +89,44 @@ def run_cli() -> None:
 
             openspace_tags = [t for t in tags_raw if match_openspace_tag(t)]
             if len(openspace_tags) > 0:
-                print(photo_id, title, 'already tagged', openspace_tags)
-                continue
+                print(photo_id, title, 'already tagged by place', openspace_tags)
+            else:
+                for named_poly in drawn_polygons:
+                    if named_poly['polygon'].contains(lng_lat_point):
+                        place = named_poly['name']
+                        print(f'Found {photo_id} in {place} polyfile')
+                        break
 
-            lat_lon = (
-                float(gps_data['photo']['location']['latitude']), float(gps_data['photo']['location']['longitude']))
+                if not place:
+                    for shape in shapefiles:
+                        finder = ShapefileLocationFinder(shape['filename'], shape['name_field'])
+                        place = finder.place_from_lat_lng(lat_lon)
+                        if place:
+                            break
 
-            lng_lat_point = lng_lat_point_from_lat_lng(lat_lon)
-            for named_poly in polygons:
-                if named_poly['polygon'].contains(lng_lat_point):
-                    place = named_poly['name']
-                    print(f'Found {photo_id} in {place} polyfile')
-                    break
+                print(f'{photo_id}, {title}, {place}')
+                if place:
+                    place_tag = make_openspace_tag(place)
+                    flickr.photos.addTags(photo_id=photo_id, tags=place_tag)
 
-            if not place:
-                place = finder.place_from_lat_lng(lat_lon)
+            lands_tags = [t for t in tags_raw if match_lands_tag(t)]
+            if len(lands_tags) > 0:
+                print(photo_id, title, 'already tagged by territory', lands_tags)
+            else:
+                territories = []
+                for territory in lands_polygons:
+                    name = territory['name']
+                    if len(name) > 0 and territory['polygon'].contains(lng_lat_point):
+                        # print(f'TN:{name}:')
+                        territories.append(name)
 
-            print(f'{photo_id}, {title}, {place}')
-            if place:
-                place_tag = make_openspace_tag(place)
-                flickr.photos.addTags(photo_id=photo_id, tags=place_tag)
+                if len(territories) > 0:
+                    territories.sort()
+                    territories_string = list_to_punctuated_string(territories)
+                    print(f'Found {photo_id} in {territories_string} territory')
+
+                    lands_tag = make_lands_tag(territories_string)
+                    flickr.photos.addTags(photo_id=photo_id, tags=lands_tag)
 
 
 def flickr_get_token(flickr, perms='read'):
