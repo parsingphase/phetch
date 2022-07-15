@@ -171,7 +171,7 @@ def get_tagged_lands(info) -> Optional[str]:
     return get_machine_tag(info, 'geo:native_territory')
 
 
-def get_machine_tag(info, tag_label):
+def get_machine_tag(info, tag_label) -> Optional[str]:
     tags = info['photo']['tags']['tag']
     matched_tag = [t['raw'] for t in tags if t['raw'].startswith(f'{tag_label}=')]
     tag_value = matched_tag[0].replace(f'{tag_label}=', '') if len(matched_tag) > 0 else None

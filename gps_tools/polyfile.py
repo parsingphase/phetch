@@ -96,7 +96,7 @@ def lng_lat_point_from_lat_lng(lat_lng: Tuple) -> Point:
     return Point(lat_lng[::-1]) if lat_lng else None
 
 
-def list_to_punctuated_string(list):
+def list_to_punctuated_string(list) -> str:
     punctuated_string = list[0] if len(list) > 0 else ''
     if len(list) > 1:
         punctuated_string = ', '.join(list[0:-1]) + ' & ' + list[-1]

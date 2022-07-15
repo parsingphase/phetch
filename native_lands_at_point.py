@@ -6,7 +6,7 @@ from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
 
-def main():
+def main() -> None:
     # read file
     data_file = 'data/indigenousTerritories.json'
     with open(data_file, 'r') as myfile:
@@ -57,7 +57,7 @@ def main():
         print(lat_lng, territory_list + ' native land' if territory_list else '')
 
 
-def list_to_punctuated_string(territories):
+def list_to_punctuated_string(territories) -> str:
     territory_list = ''
     if len(territories) > 1:
         territory_list = ', '.join(territories[0:-1]) + ' & ' + territories[-1]

@@ -1,5 +1,6 @@
 from typing import TypedDict, List
 
+
 class ShapefileSpec(TypedDict):
     name: str
     filename: str
@@ -29,7 +30,8 @@ shapefiles: List[ShapefileSpec] = [
 
     shapefile(
         'NPS',
-        'data/NPS_-_Land_Resources_Division_Boundary_and_Tract_Data_Service/NPS_-_Land_Resources_Division_Boundary_and_Tract_Data_Service.shp',
+        'data/NPS_-_Land_Resources_Division_Boundary_and_Tract_Data_Service/' +
+        'NPS_-_Land_Resources_Division_Boundary_and_Tract_Data_Service.shp',
         'UNIT_NAME'
     ),
 

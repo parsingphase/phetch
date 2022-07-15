@@ -19,7 +19,7 @@ def make_poly_from_bbox(box: List[float]):
     return Polygon([(box[0], box[1]), (box[0], box[3]), (box[2], box[3]), (box[2], box[1])])
 
 
-def record_matches(record, field, match):
+def record_matches(record, field, match) -> bool:
     record_dict = record.as_dict()
     return field in record_dict and match in record_dict[field]
 
