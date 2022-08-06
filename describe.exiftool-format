@@ -1,0 +1,8 @@
+#Usage: exiftool -m -q -q -c '%.3f' -p describe.exiftool-format /path/to/image
+$FileName
+  $ObjectName
+  $Model, $FocalLength, ${ShutterSpeedValue}s, f/$FNumber, ISO $ISO
+  $LensModel
+  $CreateDate  $GPSPosition
+  $Keywords
+

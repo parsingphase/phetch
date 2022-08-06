@@ -12,6 +12,8 @@ WORKDIR /root/phetch
 # RUN virtualenv -p /usr/local/bin/python /root/phetch
 ENV SHELL=/bin/bash
 
+RUN apt-get install -y exiftool
+
 RUN pip install awscli
 RUN pipenv --python 3.9 install
 

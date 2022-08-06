@@ -97,7 +97,7 @@ def run_cli() -> None:
         if not place:
             for shape in shapefiles:
                 finder = ShapefileLocationFinder(shape['filename'], shape['name_field'])
-                place = finder.place_from_lat_lng(lng_lat_point)
+                place = finder.place_from_lat_lng(lat_lng)
                 if place:
                     finder_name = shape['name']
                     print(f'Found {image_file} in {finder_name} finder')
