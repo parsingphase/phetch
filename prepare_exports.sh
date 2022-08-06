@@ -32,3 +32,10 @@ cd "${SCRIPT_DIR}"
 "${SCRIPT_DIR}/introspect.py" --rename "$IMAGE_DIR_ABS"
 "${SCRIPT_DIR}/find_photo_openspace.py" "$IMAGE_DIR_ABS"
 "${SCRIPT_DIR}/automark.py" --resize 2048 "$IMAGE_DIR_ABS"
+
+echo Creating index "$IMAGE_DIR_ABS/catalog.txt"
+echo "Index" > "$IMAGE_DIR_ABS/catalog.txt"
+echo >> "$IMAGE_DIR_ABS/catalog.txt"
+find "$IMAGE_DIR_ABS" -maxdepth 1 -type f -iname '*.jpg' -exec ${SCRIPT_DIR}/context.sh "{}" \; >> $IMAGE_DIR_ABS/catalog.txt
+
+echo prepare_exports.sh DONE

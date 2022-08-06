@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 FILENAME=$1
 
 function ordinal () {
@@ -16,7 +18,13 @@ function etf () {
 IMAGE_SETTINGS=$(etf '$Model, $FocalLength, ${ShutterSpeedValue}s, f/$FNumber, ISO $ISO' "$FILENAME"| sed 's/\.0//g' | sed 's/ mm/mm/g')
 #    150-600mm F5-6.3 DG OS HSM | Contemporary 015 +2x
 # => 150-600mm F5-6.3 DG OS HSM +2x teleconvertor
+RAW_LENS=$(etf '$LensModel' "$FILENAME")
 LENS=$(etf '$LensModel' "$FILENAME" | sed -E 's/\|[^+]*//' | sed -E 's/\+([0-9.]+)x/with \1x teleconverter/')
+
+if [[ "$RAW_LENS" == *"| Contemporary"* ]]; then
+  LENS="Sigma $LENS"
+fi
+
 SUBJECT=$(etf '$ObjectName' "$FILENAME")
 
 #Extract day of month separately to call ordinal on it, then pack into more general format
@@ -45,3 +53,4 @@ echo "  $LENS"
 if [[ "$TERRITORY" != "" ]]; then
   echo "  $TERRITORY"
 fi
+echo
