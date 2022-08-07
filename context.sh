@@ -53,4 +53,9 @@ echo "  $LENS"
 if [[ "$TERRITORY" != "" ]]; then
   echo "  $TERRITORY"
 fi
+
+if [[ "$2" == "-k" ]]; then
+  KEYWORDS=$(etf '$Keywords' "$FILENAME")
+  echo "  $KEYWORDS"
+fi
 echo
