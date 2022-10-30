@@ -46,7 +46,7 @@ class FlickrReader:
 
     def scan_albums(self, albums: List[str]) -> List[Photo]:
         """
-        Scan albums, given as a range of IDs, for potential dowloads
+        Scan albums, given as a range of IDs, for potential downloads
         :param limit:
         :param albums:
         :param output:

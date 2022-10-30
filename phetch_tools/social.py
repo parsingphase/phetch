@@ -15,6 +15,12 @@ from .load_config import load_config
 ScheduledId = TypedDict('ScheduledId', {'photo_id': str, 'date_str': str})
 SimpleTweet = TypedDict('SimpleTweet', {'text': str, 'media': str})
 
+lens_lookup = {
+    '100-400mm F5-6.3 DG OS HSM | Contemporary 017': 'Sigma 100-400mm',
+    '150-600mm F5-6.3 DG OS HSM | Contemporary 015': 'Sigma 150-600mm',
+    'EF70-300mm f/4-5.6 IS II USM': 'Canon 70-300mm',
+    'RF800mm F11 IS STM': 'Canon 800mm f/11',
+}
 
 class UniquenessError(Exception):
     """
@@ -199,6 +205,8 @@ def get_photo_properties_string(flickr, photo_id) -> str:
         exif_data = flickr.photos.getExif(photo_id=photo_id)
         properties = exif_data['photo']['exif']
         # print(properties)
+        lens_raw = first([read_content(p['raw']) for p in properties if p['tag'] == 'LensModel'])
+        lens = lens_lookup[lens_raw] if lens_raw in lens_lookup else None
         model = first([read_content(p['raw']) for p in properties if p['tag'] == 'Model'])
         exposure = first([read_content(p['raw']) for p in properties if p['tag'] == 'ExposureTime'])
         aperture = first([read_content(p['clean']) for p in properties if p['tag'] == 'FNumber'])
@@ -212,7 +220,7 @@ def get_photo_properties_string(flickr, photo_id) -> str:
         if iso:
             iso = 'ISO ' + iso
         # print({'model': model, 'exposure': exposure, 'aperture': aperture, 'iso': iso, 'focal': focal})
-        properties_string = ', '.join([p for p in [model, focal, exposure, aperture, iso] if p])
+        properties_string = ', '.join([p for p in [model, lens, focal, exposure, aperture, iso] if p])
         # print(properties_string)
     except flickrapi.exceptions.FlickrError:
         pass
