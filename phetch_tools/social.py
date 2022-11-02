@@ -16,11 +16,12 @@ ScheduledId = TypedDict('ScheduledId', {'photo_id': str, 'date_str': str})
 SimpleTweet = TypedDict('SimpleTweet', {'text': str, 'media': str})
 
 lens_lookup = {
-    '100-400mm F5-6.3 DG OS HSM | Contemporary 017': 'Sigma 100-400mm',
-    '150-600mm F5-6.3 DG OS HSM | Contemporary 015': 'Sigma 150-600mm',
-    'EF70-300mm f/4-5.6 IS II USM': 'Canon 70-300mm',
-    'RF800mm F11 IS STM': 'Canon 800mm f/11',
+    '100-400mm F5-6.3 DG OS HSM | Contemporary 017': {'name': 'Sigma 100-400mm', 'zoom': True},
+    '150-600mm F5-6.3 DG OS HSM | Contemporary 015': {'name': 'Sigma 150-600mm', 'zoom': True},
+    'EF70-300mm f/4-5.6 IS II USM': {'name': 'Canon 70-300mm', 'zoom': True},
+    'RF800mm F11 IS STM': {'name': 'Canon 800mm f/11', 'zoom': False},
 }
+
 
 class UniquenessError(Exception):
     """
@@ -205,8 +206,7 @@ def get_photo_properties_string(flickr, photo_id) -> str:
         exif_data = flickr.photos.getExif(photo_id=photo_id)
         properties = exif_data['photo']['exif']
         # print(properties)
-        lens_raw = first([read_content(p['raw']) for p in properties if p['tag'] == 'LensModel'])
-        lens = lens_lookup[lens_raw] if lens_raw in lens_lookup else None
+
         model = first([read_content(p['raw']) for p in properties if p['tag'] == 'Model'])
         exposure = first([read_content(p['raw']) for p in properties if p['tag'] == 'ExposureTime'])
         aperture = first([read_content(p['clean']) for p in properties if p['tag'] == 'FNumber'])
@@ -219,8 +219,18 @@ def get_photo_properties_string(flickr, photo_id) -> str:
             focal = focal.replace(' ', '')
         if iso:
             iso = 'ISO ' + iso
+
+        lens_raw = first([read_content(p['raw']) for p in properties if p['tag'] == 'LensModel'])
+        if lens_raw in lens_lookup:
+            lens = lens_lookup[lens_raw]
+            lens_info = f"{lens['name']} @ {focal}" if lens['zoom'] and focal else lens['name']
+        elif focal:
+            lens_info = focal
+        else:
+            lens_info = None
+
         # print({'model': model, 'exposure': exposure, 'aperture': aperture, 'iso': iso, 'focal': focal})
-        properties_string = ', '.join([p for p in [model, lens, focal, exposure, aperture, iso] if p])
+        properties_string = ', '.join([p for p in [model, lens_info, exposure, aperture, iso] if p])
         # print(properties_string)
     except flickrapi.exceptions.FlickrError:
         pass
