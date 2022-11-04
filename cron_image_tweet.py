@@ -118,16 +118,24 @@ def lambda_handler(event: Any, context: Any):
 
     source_file = getenv('POTD_SCHEDULE_FILE')
     dry_run = bool(getenv('POTD_DRY_RUN'))
-    hashtag = getenv('POTD_HASHTAG', '')
+
+    default_lambda_hashtag = getenv('POTD_HASHTAG', '')
+    mastodon_hashtag = getenv('POTD_HASHTAG_MASTODON', None)
+    twitter_hashtag = getenv('POTD_HASHTAG_TWITTER', None)
+    if mastodon_hashtag is None:
+        mastodon_hashtag = default_lambda_hashtag
+    if twitter_hashtag is None:
+        twitter_hashtag = default_lambda_hashtag
+
     if source_file is None:
         print('POTD_SCHEDULE_FILE environmental variable must be defined')
         sys.exit(1)
     schedule = scan_file_for_coded_filenames(Path(source_file))
 
     if service == 'mastodon':
-        post_toot_from_schedule(schedule, hashtag)
+        post_toot_from_schedule(schedule, mastodon_hashtag)
     elif service == 'twitter':
-        post_tweet_from_schedule(schedule, hashtag, dry_run)
+        post_tweet_from_schedule(schedule, twitter_hashtag, dry_run)
     else:
         raise Exception(f'Invalid service "{service}" specified')
 
