@@ -88,15 +88,16 @@ def post_toot_from_schedule(schedule: List[ScheduledId], hashtag: str = '') -> N
         sys.exit(1)
     tweet: SimpleTweet = build_tweet_by_flickr_photo_id(due_photo['photo_id'], hashtag)
     mastodon = init_mastodon_client('./config.yml')
-    post_image_status(mastodon, tweet['media'], tweet['text'])
+    post_image_status(mastodon, tweet['media'], tweet['text'], tweet['description'])
     print('Tooted', tweet)
 
 
-def post_image_status(mastodon, image, text) -> None:
+def post_image_status(mastodon, image, text, description=None) -> None:
     """
     Post an image and text as a toot
 
     Args:
+        description:
         mastodon:
         image:
         text:
@@ -108,7 +109,7 @@ def post_image_status(mastodon, image, text) -> None:
         response = requests.get(image, allow_redirects=True)
         content_type = response.headers['Content-Type']
         file_content = response.content
-        media = mastodon.media_post(file_content, mime_type=content_type)
+        media = mastodon.media_post(file_content, mime_type=content_type, description=description)
     elif exists(image):
         media = mastodon.media_post(image)
     else:

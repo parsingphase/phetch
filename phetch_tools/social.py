@@ -7,13 +7,13 @@ import flickrapi
 import pendulum
 import twitter
 from dateutil.parser import parse
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, NotRequired
 
 from .init_flickr import init_flickr_client
 from .load_config import load_config
 
 ScheduledId = TypedDict('ScheduledId', {'photo_id': str, 'date_str': str})
-SimpleTweet = TypedDict('SimpleTweet', {'text': str, 'media': str})
+SimpleTweet = TypedDict('SimpleTweet', {'text': str, 'media': str, 'description': NotRequired[str]})
 
 lens_lookup = {
     '100-400mm F5-6.3 DG OS HSM | Contemporary 017': {'name': 'Sigma 100-400mm', 'zoom': True},
@@ -118,6 +118,12 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
     info = flickr.photos.getInfo(photo_id=photo_id)
     when = info['photo']['dates']['taken']
     title = read_content(info['photo']['title'])
+    flickr_description = read_content(info['photo']['description']).strip()
+    if len(flickr_description) > 0:
+        extended_description = ': ' + flickr_description.strip('.')
+    else:
+        extended_description = ''
+
     when_date = parse(when)
     friendly_date = pendulum.instance(when_date).format('Do MMMM Y')  # type: ignore
 
@@ -148,7 +154,8 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
 
     return {
         'text': text,
-        'media': url
+        'media': url,
+        'description': f'Photo of a {title}{extended_description}. Full details in post.',
     }
 
 
