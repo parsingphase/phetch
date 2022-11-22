@@ -18,9 +18,11 @@ from shapefile_list import shapefiles
 SKIP_TO = None
 # ALBUM_ID = 72177720295678754  # Massachusetts Wildlife 2022
 # ALBUM_ID = 72157717912633238  # Wildlife Showcase 2021
-ALBUM_ID = 72177720295655372  # Massachusetts Birds 2022
+# ALBUM_ID = 72177720295655372  # Massachusetts Birds 2022
+ALBUM_ID = 72177720303859319  # Arizona 2022
 POLYDIR = 'polyfiles'
 NATIVE_LANDS_JSON_FILE = 'data/indigenousTerritories.json'
+REPLACE_NATIVE_LANDS_TAG = True
 
 
 def run_cli() -> None:
@@ -109,10 +111,20 @@ def run_cli() -> None:
                     place_tag = make_openspace_tag(place)
                     flickr.photos.addTags(photo_id=photo_id, tags=place_tag)
 
-            lands_tags = [t for t in tags_raw if match_lands_tag(t)]
-            if len(lands_tags) > 0:
-                print(photo_id, title, 'already tagged by territory', lands_tags)
-            else:
+            needs_lands_tag = True
+            lands_tag_objects = [t for t in tags if match_lands_tag(t['raw'])]
+            if len(lands_tag_objects) > 0:
+                print(photo_id, title, 'already tagged by territory', lands_tag_objects)
+                if REPLACE_NATIVE_LANDS_TAG:
+                    for tag_to_remove in lands_tag_objects:
+                        remove_id = tag_to_remove['id']
+                        remove_text=tag_to_remove['raw']
+                        print(f'Remove native tag {remove_id} / {remove_text}')
+                        flickr.photos.removeTag(tag_id=remove_id)
+                else:
+                    needs_lands_tag = False
+
+            if needs_lands_tag:
                 territories = []
                 for territory in lands_polygons:
                     name = territory['name']
@@ -127,6 +139,7 @@ def run_cli() -> None:
 
                     lands_tag = make_lands_tag(territories_string)
                     flickr.photos.addTags(photo_id=photo_id, tags=lands_tag)
+                    print(f'Add native tag {lands_tag}')
 
 
 def flickr_get_token(flickr, perms='read'):

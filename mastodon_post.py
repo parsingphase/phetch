@@ -114,7 +114,7 @@ def post_image_status(mastodon, image, text, description=None) -> None:
         media = mastodon.media_post(image)
     else:
         raise Exception(f'File or URL {image} not found')
-    mastodon.status_post(text, media_ids=[media['id']])
+    mastodon.status_post(text, media_ids=[media['id']], visibility='public')
 
 
 if __name__ == '__main__':

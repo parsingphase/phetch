@@ -5,6 +5,7 @@ Find location names for images in a directory. Run with --help for details
 """
 
 import argparse
+import html
 from pathlib import Path
 from typing import List, Optional
 
@@ -24,7 +25,7 @@ from metadata_tools.piexif_utils import get_decimal_lat_long_from_piexif
 from shapefile_list import shapefiles
 
 POLYDIR = 'polyfiles'
-NATIVE_LANDS_JSON_FILE = 'data/indigenousTerritories.json'
+NATIVE_LANDS_JSON_FILE = 'data/indigenousTerritories.new.json'
 
 mute_iptcinfo_logger()
 
@@ -85,7 +86,7 @@ def run_cli() -> None:
             territories = []
             for territory in lands_polygons:
                 if territory['polygon'].contains(lng_lat_point):
-                    territories.append(territory['name'])
+                    territories.append(html.unescape(territory['name']))
 
             if len(territories) > 0:
                 territories.sort()

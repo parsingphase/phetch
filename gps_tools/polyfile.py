@@ -78,8 +78,15 @@ def load_native_lands_polys_from_file(data_file: str) -> List[Polygon]:
             # print(name, feature['properties']['description'], boundaries)
             for boundary in boundaries:
                 if len(boundary) >= 3:
-                    polygon = Polygon(boundary)
-                    polys.append({'name': name, 'polygon': polygon})
+                    try:
+                        boundary_2d = [pt[0:2] for pt in boundary]
+                        polygon = Polygon(boundary_2d)  # Normalize to 2D (some 3d pts can exist!)
+                        polys.append({'name': name, 'polygon': polygon})
+                    except Exception as e:
+                        print(boundary)
+                        print(boundary_2d)
+                        print(e)
+                        raise e
 
     return polys
 
