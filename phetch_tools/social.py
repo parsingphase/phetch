@@ -147,7 +147,7 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
 
     text = f'{title}, {friendly_date}{locale_string}{properties_string}'
 
-    if len(text) + len(hashtag) < 280:
+    if len(text) + len(hashtag) < 500:
         text = text + f'\n{hashtag}'
 
     print(f'Text length: {len(text)}')

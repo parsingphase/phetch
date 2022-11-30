@@ -32,17 +32,22 @@ def init_mastodon_client(config_file) -> Mastodon:
     """
     mastodon_config = load_config(config_file)['mastodon']
 
+    # If you're using 2FA, you'll need your client's access_token, otherwise you can use username/password
+    access_token = mastodon_config['access_token'] if 'access_token' in mastodon_config else None
+
     mastodon = Mastodon(
         client_id=mastodon_config['client_id'],
         client_secret=mastodon_config['client_secret'],
-        api_base_url=mastodon_config['api_base_url']
+        api_base_url=mastodon_config['api_base_url'],
+        access_token=access_token,
     )
 
-    mastodon.log_in(
-        mastodon_config['user_email'],
-        mastodon_config['user_password'],
-        scopes=['write']
-    )
+    if not access_token:
+        mastodon.log_in(
+            mastodon_config['user_email'],
+            mastodon_config['user_password'],
+            scopes=['write']
+        )
 
     print('Mastodon version: ' + mastodon.retrieve_mastodon_version() + ' on ' + mastodon.api_base_url)
 
