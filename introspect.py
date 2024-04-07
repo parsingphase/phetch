@@ -5,6 +5,7 @@ Improve keywords and title organization for all images in a folder for upload to
 """
 
 import argparse
+import json
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -39,6 +40,7 @@ def parse_cli_args() -> argparse.Namespace:
     parser.add_argument('dir', help='Directory containing files to process')
     parser.add_argument('--rename', help='Modify filename to include subject', action='store_true')
     parser.add_argument('--gps-dp', help='Number of decimal places to fuzz GPS location to', type=int)
+    parser.add_argument('--translation-json', help="JSON file containing IOC summary data")
     args = parser.parse_args()
     return args
 
@@ -192,20 +194,37 @@ def run_cli() -> None:
 
         # Find and apply subjects and keywords
         iptc_changed = False
-        iptc = IPTCInfo(filename)
+        iptc = IPTCInfo(filename, inp_charset='utf-8', out_charset='utf-8')
+
+        existing_keywords = [k.decode('utf-8', errors='ignore') for k in iptc['keywords']]
+
         for keyword in keywords:
-            existing_keywords = [k.decode('utf-8') for k in iptc['keywords']]
             if keyword not in existing_keywords:
                 iptc['keywords'].append(keyword.encode('utf-8'))
                 iptc_changed = True
 
         # Is there already a subject?
-        subject = iptc['object name'].decode('utf-8') if iptc['object name'] else None
+        subject = iptc['object name'] if iptc['object name'] else None
         if not subject:
-            subject = find_subject_from_keywords([k.decode('utf-8') for k in iptc['keywords']])
+            subject = find_subject_from_keywords([k.decode('utf-8', errors='ignore') for k in iptc['keywords']])
             if subject:
-                iptc['object name'] = subject.encode('utf-8')
+                iptc['object name'] = subject
                 iptc_changed = True
+
+        if args.translation_json:
+            with open(args.translation_json, "r", encoding='utf-8') as read_file:
+                translations = json.load(read_file)
+                # print(translations)
+                if subject and (subject in translations):
+                    translated_subject = translations[subject]
+                    for key in translated_subject:
+                        keyword = translated_subject[key]
+                        # translated keywords should all be valid utf-8 as loaded
+                        # looks like we're double-encoding?
+                        # str.encode, bytes.decode… str is a list of codepoints
+                        if keyword not in existing_keywords:
+                            iptc['keywords'].append(keyword.encode('raw_unicode_escape'))  # don't re-encode it!
+                    iptc_changed = True
 
         # Save IPTC if changed
         if iptc_changed:

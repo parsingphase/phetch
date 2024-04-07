@@ -75,6 +75,7 @@ class ShapefileLocationFinder:
                             record_matches(record, 'Unit_Nm', 'Field Office') or \
                             record_matches(record, 'Des_Tp', 'MIL') or \
                             record_matches(record, 'Pub_Access', 'XA') or \
+                            record[self.place_name_field] == 'Usbr' or \
                             record[self.place_name_field] == 'Park':
                         # record_matches(record, 'Own_Name', 'OTHS') or \ # Can include reserves
                         # print('Excluded')

@@ -162,7 +162,7 @@ def decode_tags(iptc) -> List[str]:
 
     """
     raw_tags = iptc['keywords']
-    tags = [k.decode('utf-8') for k in raw_tags]
+    tags = [k.decode('utf-8', errors='ignore') for k in raw_tags]
     return tags
 
 
