@@ -196,17 +196,17 @@ def run_cli() -> None:
         iptc_changed = False
         iptc = IPTCInfo(filename, inp_charset='utf-8', out_charset='utf-8')
 
-        existing_keywords = [k.decode('utf-8', errors='ignore') for k in iptc['keywords']]
+        existing_keywords = [k for k in iptc['keywords']]
 
         for keyword in keywords:
             if keyword not in existing_keywords:
-                iptc['keywords'].append(keyword.encode('utf-8'))
+                iptc['keywords'].append(keyword)
                 iptc_changed = True
 
         # Is there already a subject?
         subject = iptc['object name'] if iptc['object name'] else None
         if not subject:
-            subject = find_subject_from_keywords([k.decode('utf-8', errors='ignore') for k in iptc['keywords']])
+            subject = find_subject_from_keywords([k for k in iptc['keywords']])
             if subject:
                 iptc['object name'] = subject
                 iptc_changed = True
@@ -218,12 +218,13 @@ def run_cli() -> None:
                 if subject and (subject in translations):
                     translated_subject = translations[subject]
                     for key in translated_subject:
-                        keyword = translated_subject[key]
-                        # translated keywords should all be valid utf-8 as loaded
-                        # looks like we're double-encoding?
-                        # str.encode, bytes.decode… str is a list of codepoints
-                        if keyword not in existing_keywords:
-                            iptc['keywords'].append(keyword.encode('raw_unicode_escape'))  # don't re-encode it!
+                        if key not in ['spanish', 'french']:
+                            keyword = translated_subject[key]
+                            # translated keywords should all be valid utf-8 as loaded
+                            # looks like we're double-encoding?
+                            # str.encode, bytes.decode… str is a list of codepoints
+                            if keyword not in existing_keywords:
+                                iptc['keywords'].append(keyword)  # don't re-encode it!
                     iptc_changed = True
 
         # Save IPTC if changed

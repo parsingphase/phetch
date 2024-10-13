@@ -26,6 +26,8 @@ typing-extensions = "*"
 pyproj = "*"
 shapely = "*"
 "mastodon.py" = "*"
+setuptools = "*"
+wheel = "*"
 
 [requires]
 python_version = "3.9"
