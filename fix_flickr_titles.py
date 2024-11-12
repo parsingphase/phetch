@@ -5,12 +5,13 @@ import json
 from phetch_tools import init_flickr_client
 
 # Path to JSON file downloaded from iNat
-iNatJsonPath = '/Users/wechsler/repos/inat-history/stats/source/birds.json'
+iNatJsonPath = '/Users/wechsler/repos/inat-history/stats/source/birds-202411.json'
 
 always_replace = [
     'Cyanocitta Cristata',
     'Greater Shearwater',
     'Parulidae',
+    'European Herring Gull',
 ]
 
 
@@ -18,9 +19,13 @@ def run_cli() -> None:
     flickr = init_flickr_client('./config.yml')
     with open(iNatJsonPath) as content_fp:
         observations = json.load(content_fp)
+        last_was_dot = False
         for observation in observations:
             if observation['taxon']['rank'] in ['species', 'subspecies']:
                 species = observation['taxon']['common_name']['name']
+                # messy split, all mine got reset to European despite location; unclear which is correct
+                if species == 'European Herring Gull':
+                    species = 'Herring Gull'
                 photos = observation['photos']
                 inat_uri = observation['uri']
                 inat_description = observation['short_description']
@@ -32,6 +37,9 @@ def run_cli() -> None:
                             try:
                                 photo_info = flickr.photos.getInfo(photo_id=photo_id)
                             except Exception as e:
+                                if last_was_dot:
+                                    print('')
+                                    last_was_dot = False
                                 print(f'Failed to fetch {photo_id} ({native_page_url})')
                                 continue
 
@@ -45,6 +53,8 @@ def run_cli() -> None:
                                 ignore_description = (len(inat_description) == 0) or 'Species TBD' in inat_description
                                 replaceable_title = '4Y6A' in flickr_title or '?' in flickr_title or flickr_title in always_replace
                                 species_name_longer = (len(species) >= len(flickr_title))
+                                if last_was_dot:
+                                    print('')
                                 if replaceable_title or (species_name_longer and ignore_description):
                                     print(
                                         f'{photo_id}: {flickr_title} => {species} ({native_page_url} / {inat_uri}) - UPDATING …',
@@ -58,6 +68,11 @@ def run_cli() -> None:
                                     print(
                                         f'{photo_id}: F: {flickr_title} => iN: {species}{desc_block} DIFFER ({native_page_url} / {inat_uri}) - no fix'
                                     )
+                                last_was_dot = False
+                            else:
+                                # no change
+                                print('.', end='', flush=True)
+                                last_was_dot = True
 
 
 run_cli()
