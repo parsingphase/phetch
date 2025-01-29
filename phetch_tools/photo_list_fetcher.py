@@ -1,6 +1,7 @@
 """
 Class file for PhotoListFetcher
 """
+
 from pathlib import Path
 from random import sample
 from time import sleep
@@ -19,7 +20,9 @@ from .types import Photo, PhotoKey
 
 
 # Set of "sort" functions; these actually subsample the list of fetched photos in a defined way
-def sort_natural(photos: List[Photo], limit: Optional[int] = None, reverse: bool = False) -> List[Photo]:
+def sort_natural(
+    photos: List[Photo], limit: Optional[int] = None, reverse: bool = False
+) -> List[Photo]:
     """
     Don't actually sort, just use whatever order the Flickr API returned
     :param reverse:
@@ -32,7 +35,9 @@ def sort_natural(photos: List[Photo], limit: Optional[int] = None, reverse: bool
     return photos if limit is None else photos[:limit]
 
 
-def sort_random(photos: List[Photo], limit: Optional[int] = None, reverse: bool = False) -> List[Photo]:
+def sort_random(
+    photos: List[Photo], limit: Optional[int] = None, reverse: bool = False
+) -> List[Photo]:
     """
     Get a random selection of photos from the list
     :param reverse:
@@ -47,7 +52,11 @@ def sort_random(photos: List[Photo], limit: Optional[int] = None, reverse: bool 
 
 
 def sort_by_key(
-        photos: List[Photo], key: PhotoKey, limit: Optional[int] = None, reverse: bool = False) -> List[Photo]:
+    photos: List[Photo],
+    key: PhotoKey,
+    limit: Optional[int] = None,
+    reverse: bool = False,
+) -> List[Photo]:
     """
     Helper to sort photos by a given dict key
     :param photos:
@@ -62,7 +71,9 @@ def sort_by_key(
     return photos
 
 
-def sort_title(photos: List[Photo], limit: Optional[int] = None, reverse: bool = False) -> List[Photo]:
+def sort_title(
+    photos: List[Photo], limit: Optional[int] = None, reverse: bool = False
+) -> List[Photo]:
     """
     Sort photos by title
     :param photos:
@@ -70,10 +81,12 @@ def sort_title(photos: List[Photo], limit: Optional[int] = None, reverse: bool =
     :param reverse:
     :return:
     """
-    return sort_by_key(photos, key='title', limit=limit, reverse=reverse)
+    return sort_by_key(photos, key="title", limit=limit, reverse=reverse)
 
 
-def sort_taken(photos: List[Photo], limit: Optional[int] = None, reverse: bool = False) -> List[Photo]:
+def sort_taken(
+    photos: List[Photo], limit: Optional[int] = None, reverse: bool = False
+) -> List[Photo]:
     """
     Sort photos by date taken
     :param photos:
@@ -81,18 +94,19 @@ def sort_taken(photos: List[Photo], limit: Optional[int] = None, reverse: bool =
     :param reverse:
     :return:
     """
-    return sort_by_key(photos, key='taken', limit=limit, reverse=reverse)
+    return sort_by_key(photos, key="taken", limit=limit, reverse=reverse)
 
 
 class PhotoListFetcher:
     """
     Download from a list of Photo objects
     """
+
     sort_funcs = {
-        'natural': sort_natural,
-        'random': sort_random,
-        'alphabetical': sort_title,
-        'taken': sort_taken,
+        "natural": sort_natural,
+        "random": sort_random,
+        "alphabetical": sort_title,
+        "taken": sort_taken,
     }
     post_download_callback: Optional[Callable[[str], None]]
 
@@ -100,7 +114,9 @@ class PhotoListFetcher:
         self.preferred_size = None
         self.post_download_callback = None
 
-    def set_post_download_callback(self, callback: Optional[Callable[[str], None]]) -> 'PhotoListFetcher':
+    def set_post_download_callback(
+        self, callback: Optional[Callable[[str], None]]
+    ) -> "PhotoListFetcher":
         """
         Set a callback to be used after each download
         :param callback:
@@ -109,7 +125,9 @@ class PhotoListFetcher:
         self.post_download_callback = callback
         return self
 
-    def order_photo_list(self, photos: List[Photo], sort: str, reverse: bool, limit) -> List[Photo]:
+    def order_photo_list(
+        self, photos: List[Photo], sort: str, reverse: bool, limit
+    ) -> List[Photo]:
         """
         Order a provided photo list according to the required algorithm and constraints
         :param photos:
@@ -134,9 +152,9 @@ class PhotoListFetcher:
         :return:
         """
         for photo in photos:
-            outfile = output_dir + '/' + photo['local_file']
+            outfile = output_dir + "/" + photo["local_file"]
             if not Path(outfile).exists():
-                self.download_image(photo['url'], outfile, True)
+                self.download_image(photo["url"], outfile, True)
                 sleep(0.1)
 
     def download_image(self, url: str, outfile: str, verbose: bool = False):
@@ -148,15 +166,19 @@ class PhotoListFetcher:
         :return:
         """
         suffix = Path(outfile).suffix.lower()
-        if suffix not in ['.jpg', '.jpeg', '.gif', '.png']:
-            raise ValueError(f"Non-JPG filename '{outfile}' ({suffix}) found, aborting as a precaution")
+        if suffix not in [".jpg", ".jpeg", ".gif", ".png"]:
+            raise ValueError(
+                f"Non-JPG filename '{outfile}' ({suffix}) found, aborting as a precaution"
+            )
         response = requests.get(url)
-        content_type = response.headers['Content-Type'].split(';')[0]
-        if content_type.split('/')[0].lower() != 'image':
-            raise ValueError(f"Non-image type ({content_type}) declared by server, aborting as a precaution")
-        open(outfile, 'wb').write(response.content)
+        content_type = response.headers["Content-Type"].split(";")[0]
+        if content_type.split("/")[0].lower() != "image":
+            raise ValueError(
+                f"Non-image type ({content_type}) declared by server, aborting as a precaution"
+            )
+        open(outfile, "wb").write(response.content)
         if verbose:
-            print(f'{url} => {outfile}')
+            print(f"{url} => {outfile}")
         if self.post_download_callback:
             self.post_download_callback(outfile)
 
@@ -168,8 +190,8 @@ class PhotoListFetcher:
         :param local_dir:
         :return:
         """
-        local_files = Path(local_dir).glob('*.jpg')  # assume only jpgs for now
-        remote_filenames = [photo['local_file'] for photo in photos]
+        local_files = Path(local_dir).glob("*.jpg")  # assume only jpgs for now
+        remote_filenames = [photo["local_file"] for photo in photos]
         to_remove = [file for file in local_files if file.name not in remote_filenames]
         for file in to_remove:
             print("Remove " + file.name + ", not found in photo list")

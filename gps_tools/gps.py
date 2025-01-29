@@ -12,9 +12,11 @@ class GPS:
         :param text:
         :return:
         """
-        parts = text.split(' ')
+        parts = text.split(" ")
         # cast = 'Trust me on the length!'
-        tuples = cast(Rational, tuple(tuple(int(n) for n in p.split('/')) for p in parts))
+        tuples = cast(
+            Rational, tuple(tuple(int(n) for n in p.split("/")) for p in parts)
+        )
         return tuples
 
     @staticmethod
@@ -25,7 +27,9 @@ class GPS:
         :return:
         """
         float_parts = [v[0] / v[1] for v in dms]
-        float_out = sum([float_parts[i] / pow(60, i) for i in range(0, len(float_parts))])
+        float_out = sum(
+            [float_parts[i] / pow(60, i) for i in range(0, len(float_parts))]
+        )
         return float_out
 
     @staticmethod
@@ -37,11 +41,11 @@ class GPS:
         :return:
         """
         minutes_dp = 6
-        (int_degrees, frac_degrees) = [int(p) for p in str(degrees).split('.')]
-        minutes = round(float(f'0.{frac_degrees}') * 60, minutes_dp)
+        (int_degrees, frac_degrees) = [int(p) for p in str(degrees).split(".")]
+        minutes = round(float(f"0.{frac_degrees}") * 60, minutes_dp)
         denominator = pow(10, minutes_dp)
         numerator = int(minutes * denominator)
-        return f'{int_degrees}/1 {numerator}/{denominator} 0/1'
+        return f"{int_degrees}/1 {numerator}/{denominator} 0/1"
 
     @staticmethod
     def round_dms_as_decimal(dms: str, gps_dp: int) -> str:

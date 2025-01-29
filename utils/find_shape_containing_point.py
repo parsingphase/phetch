@@ -7,7 +7,7 @@ photoLatLng = (42.332508, -71.020932)
 
 
 def run_cli() -> None:
-    shapefilePath = 'tmp/openspace/OPENSPACE_POLY'
+    shapefilePath = "tmp/openspace/OPENSPACE_POLY"
     photo_place = find_lat_lng_shapefile_place(photoLatLng, shapefilePath)
 
     print(photo_place)
@@ -22,7 +22,7 @@ def find_lat_lng_shapefile_place(photoLatLng, shapefilePath) -> str:
 
     for i in range(1, len(shapes)):
         shape = sf.shape(i)
-        place = sf.record(i)['SITE_NAME']
+        place = sf.record(i)["SITE_NAME"]
 
         if len(shape.points) < 3:
             continue
@@ -37,8 +37,8 @@ def find_lat_lng_shapefile_place(photoLatLng, shapefilePath) -> str:
         if poly.contains(photo_point):
             places.append(place)
 
-    return ' / '.join(places)
+    return " / ".join(places)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_cli()

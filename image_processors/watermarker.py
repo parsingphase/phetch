@@ -1,6 +1,7 @@
 """
 Class file for Watermarker
 """
+
 from typing import Optional, Tuple
 
 from iptcinfo3 import IPTCInfo
@@ -21,9 +22,9 @@ def standard_save(image: Image, image_file_path: str):
     image.save(
         image_file_path,
         quality=95,
-        icc_profile=image.info['icc_profile'] if 'icc_profile' in image.info else None,
+        icc_profile=image.info["icc_profile"] if "icc_profile" in image.info else None,
         exif=image.info["exif"],
-        subsampling='4:4:4'
+        subsampling="4:4:4",
     )
 
 
@@ -37,15 +38,15 @@ def write_iptc(image_file_path: str, source_iptc: IPTCInfo):
     """
     dest_iptc = IPTCInfo(image_file_path, force=True)
     iptc_keys = [
-        'supplemental category',
-        'keywords',
-        'contact',
-        'date created',
-        'digital creation date',
-        'time created',
-        'digital creation time',
-        'by-line',
-        'object name'
+        "supplemental category",
+        "keywords",
+        "contact",
+        "date created",
+        "digital creation date",
+        "time created",
+        "digital creation time",
+        "by-line",
+        "object name",
     ]
     for key in iptc_keys:
         source = source_iptc[key]
@@ -70,10 +71,13 @@ class Watermarker:
     """
     Tool to add transparent watermark to images
     """
+
     long_edge_watermark_ratio: float
     watermark: Image
     watermark_opacity: float
-    watermark_brightness_threshold: int  # max target area brightness to use the "light" watermark
+    watermark_brightness_threshold: (
+        int  # max target area brightness to use the "light" watermark
+    )
 
     def __init__(self, watermark_file: str) -> None:
         super().__init__()
@@ -124,7 +128,9 @@ class Watermarker:
         standard_save(image, image_file_path)
         write_iptc(image_file_path, iptc)
 
-    def copy_with_watermark(self, input_file: str, output_file: str, max_edge: Optional[int] = None) -> None:
+    def copy_with_watermark(
+        self, input_file: str, output_file: str, max_edge: Optional[int] = None
+    ) -> None:
         """
         Apply the loaded watermark to the specified image and save it
 
@@ -157,17 +163,27 @@ class Watermarker:
         :param image:
         :return:
         """
-        watermark_width, watermark_height, border_w, border_h = self.calculate_watermark_dimensions(image)
+        watermark_width, watermark_height, border_w, border_h = (
+            self.calculate_watermark_dimensions(image)
+        )
         watermark_left = image.width - watermark_width - border_w
         watermark_top = image.height - watermark_height - border_h
         # "bright" area is approximate; we currently just go from top-left of watermark to bottom-right of image
-        area_is_bright = self.watermark_area_is_bright(image, watermark_left, watermark_top)
+        area_is_bright = self.watermark_area_is_bright(
+            image, watermark_left, watermark_top
+        )
 
-        local_watermark = self.prepare_pastable_watermark(watermark_width, watermark_height, dark=area_is_bright)
-        image = self.apply_prepared_watermark(image, local_watermark, (watermark_left, watermark_top))
+        local_watermark = self.prepare_pastable_watermark(
+            watermark_width, watermark_height, dark=area_is_bright
+        )
+        image = self.apply_prepared_watermark(
+            image, local_watermark, (watermark_left, watermark_top)
+        )
         return image
 
-    def watermark_area_is_bright(self, image: Image, watermark_left: int, watermark_top: int) -> bool:
+    def watermark_area_is_bright(
+        self, image: Image, watermark_left: int, watermark_top: int
+    ) -> bool:
         """
         Check if the mean brightness (crudely calculated) of the bottom-right corner is "bright" or "dark"
         :param image:
@@ -175,14 +191,18 @@ class Watermarker:
         :param watermark_top:
         :return:
         """
-        target_area = image.crop((watermark_left, watermark_top, image.width - 1, image.height - 1))
+        target_area = image.crop(
+            (watermark_left, watermark_top, image.width - 1, image.height - 1)
+        )
         area_props = ImageStat.Stat(target_area)
         brightness = sum(area_props.mean) / len(area_props.mean)
         area_is_bright = brightness > self.watermark_brightness_threshold
         return area_is_bright
 
     @staticmethod
-    def apply_prepared_watermark(image, local_watermark, watermark_position) -> ImageFile:
+    def apply_prepared_watermark(
+        image, local_watermark, watermark_position
+    ) -> ImageFile:
         """
         Apply a prepared watermark to an Image
         :param image:
@@ -190,12 +210,14 @@ class Watermarker:
         :param watermark_position:
         :return:
         """
-        image = image.convert('RGBA')  # must convert to RGBA to merge with watermark
+        image = image.convert("RGBA")  # must convert to RGBA to merge with watermark
         image.paste(local_watermark, watermark_position, local_watermark)
-        image = image.convert('RGB')  # must convert back to RGB to save jpg
+        image = image.convert("RGB")  # must convert back to RGB to save jpg
         return image
 
-    def calculate_watermark_dimensions(self, image_file: ImageFile) -> Tuple[int, int, int, int]:
+    def calculate_watermark_dimensions(
+        self, image_file: ImageFile
+    ) -> Tuple[int, int, int, int]:
         """
         Calculate the size a watermark should be for a given Image object such that the
         width of the watermark is self.short_edge_watermark_ratio of the larger image's longer dimension
@@ -213,7 +235,9 @@ class Watermarker:
         watermark_height = int(watermark_width / watermark_aspect)
         return watermark_width, watermark_height, border, border
 
-    def prepare_pastable_watermark(self, watermark_width: int, watermark_height: int, dark: bool = False) -> Image:
+    def prepare_pastable_watermark(
+        self, watermark_width: int, watermark_height: int, dark: bool = False
+    ) -> Image:
         """
         Scale and apply opacity to watermark as required for use at specified size
         :param dark:
@@ -225,7 +249,7 @@ class Watermarker:
         local_watermark = watermark.resize((watermark_width, watermark_height))
         ch_r, ch_g, ch_b, ch_a = local_watermark.split()
         ch_a = ch_a.point(lambda i: i * self.watermark_opacity)
-        local_watermark = Image.merge('RGBA', (ch_r, ch_g, ch_b, ch_a))
+        local_watermark = Image.merge("RGBA", (ch_r, ch_g, ch_b, ch_a))
         return local_watermark
 
     @staticmethod
@@ -240,4 +264,4 @@ class Watermarker:
         ch_r = ch_r.point(lambda i: 255 - i)
         ch_g = ch_g.point(lambda i: 255 - i)
         ch_b = ch_b.point(lambda i: 255 - i)
-        return Image.merge('RGBA', (ch_r, ch_g, ch_b, ch_a))
+        return Image.merge("RGBA", (ch_r, ch_g, ch_b, ch_a))

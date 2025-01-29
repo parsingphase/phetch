@@ -8,8 +8,8 @@ from shapely.geometry.polygon import Polygon
 
 def main() -> None:
     # read file
-    data_file = 'data/indigenousTerritories.json'
-    with open(data_file, 'r') as myfile:
+    data_file = "data/indigenousTerritories.json"
+    with open(data_file, "r") as myfile:
         text = myfile.read()
 
     points = [
@@ -39,10 +39,10 @@ def main() -> None:
 
         # parse file
 
-        for feature in data['features']:
-            if 'Name' in feature['properties']:
-                name = feature['properties']['Name']
-                boundaries = feature['geometry']['coordinates']  # points are lng, lat
+        for feature in data["features"]:
+            if "Name" in feature["properties"]:
+                name = feature["properties"]["Name"]
+                boundaries = feature["geometry"]["coordinates"]  # points are lng, lat
                 # print(name, feature['properties']['description'], boundaries)
                 for boundary in boundaries:
                     if len(boundary) >= 3:
@@ -54,13 +54,13 @@ def main() -> None:
         territories.sort()
         territory_list = list_to_punctuated_string(territories)
 
-        print(lat_lng, territory_list + ' native land' if territory_list else '')
+        print(lat_lng, territory_list + " native land" if territory_list else "")
 
 
 def list_to_punctuated_string(territories) -> str:
-    territory_list = ''
+    territory_list = ""
     if len(territories) > 1:
-        territory_list = ', '.join(territories[0:-1]) + ' & ' + territories[-1]
+        territory_list = ", ".join(territories[0:-1]) + " & " + territories[-1]
     return territory_list
 
 

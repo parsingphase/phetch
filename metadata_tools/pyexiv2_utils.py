@@ -2,24 +2,24 @@ from typing import Dict, Set
 
 from gps_tools.gps import GPS
 
-EXIF_KEY_LATITUDE = 'Exif.GPSInfo.GPSLatitude'
-EXIF_KEY_LONGITUDE = 'Exif.GPSInfo.GPSLongitude'
+EXIF_KEY_LATITUDE = "Exif.GPSInfo.GPSLatitude"
+EXIF_KEY_LONGITUDE = "Exif.GPSInfo.GPSLongitude"
 
-IPTC_KEY_SUBJECT = 'Iptc.Application2.ObjectName'
-IPTC_KEY_KEYWORDS = 'Iptc.Application2.Keywords'
+IPTC_KEY_SUBJECT = "Iptc.Application2.ObjectName"
+IPTC_KEY_KEYWORDS = "Iptc.Application2.Keywords"
 
 exif_keys = [
-    'Exif.GPSInfo.GPSVersionID',
-    'Exif.GPSInfo.GPSLatitudeRef',
-    'Exif.GPSInfo.GPSLatitude',
-    'Exif.GPSInfo.GPSLongitudeRef',
-    'Exif.GPSInfo.GPSLongitude',
-    'Exif.GPSInfo.GPSAltitudeRef',
-    'Exif.GPSInfo.GPSAltitude',
-    'Exif.GPSInfo.GPSTimeStamp',
-    'Exif.GPSInfo.GPSSatellites',
-    'Exif.GPSInfo.GPSMapDatum',
-    'Exif.GPSInfo.GPSDateStamp',
+    "Exif.GPSInfo.GPSVersionID",
+    "Exif.GPSInfo.GPSLatitudeRef",
+    "Exif.GPSInfo.GPSLatitude",
+    "Exif.GPSInfo.GPSLongitudeRef",
+    "Exif.GPSInfo.GPSLongitude",
+    "Exif.GPSInfo.GPSAltitudeRef",
+    "Exif.GPSInfo.GPSAltitude",
+    "Exif.GPSInfo.GPSTimeStamp",
+    "Exif.GPSInfo.GPSSatellites",
+    "Exif.GPSInfo.GPSMapDatum",
+    "Exif.GPSInfo.GPSDateStamp",
 ]
 
 
@@ -58,10 +58,10 @@ def save_revised_image(image, basename: str, revised_exif: Dict, revised_iptc: D
     """
     if len(revised_iptc.keys()) > 0:
         image.modify_iptc(revised_iptc)
-        print(f'Revised IPTC for {basename}', revised_iptc)
+        print(f"Revised IPTC for {basename}", revised_iptc)
     if len(revised_exif.keys()) > 0:
         image.modify_exif(revised_exif)
-        print(f'Revised EXIF for {basename}', revised_exif)
+        print(f"Revised EXIF for {basename}", revised_exif)
 
 
 def extract_iptc_keywords(iptc: Dict) -> Set[str]:

@@ -12,14 +12,22 @@ from typing_extensions import TypedDict, NotRequired
 from .init_flickr import init_flickr_client
 from .load_config import load_config
 
-ScheduledId = TypedDict('ScheduledId', {'photo_id': str, 'date_str': str})
-SimpleTweet = TypedDict('SimpleTweet', {'text': str, 'media': str, 'description': NotRequired[str]})
+ScheduledId = TypedDict("ScheduledId", {"photo_id": str, "date_str": str})
+SimpleTweet = TypedDict(
+    "SimpleTweet", {"text": str, "media": str, "description": NotRequired[str]}
+)
 
 lens_lookup = {
-    '100-400mm F5-6.3 DG OS HSM | Contemporary 017': {'name': 'Sigma 100-400mm', 'zoom': True},
-    '150-600mm F5-6.3 DG OS HSM | Contemporary 015': {'name': 'Sigma 150-600mm', 'zoom': True},
-    'EF70-300mm f/4-5.6 IS II USM': {'name': 'Canon 70-300mm', 'zoom': True},
-    'RF800mm F11 IS STM': {'name': 'Canon 800mm f/11', 'zoom': False},
+    "100-400mm F5-6.3 DG OS HSM | Contemporary 017": {
+        "name": "Sigma 100-400mm",
+        "zoom": True,
+    },
+    "150-600mm F5-6.3 DG OS HSM | Contemporary 015": {
+        "name": "Sigma 150-600mm",
+        "zoom": True,
+    },
+    "EF70-300mm f/4-5.6 IS II USM": {"name": "Canon 70-300mm", "zoom": True},
+    "RF800mm F11 IS STM": {"name": "Canon 800mm f/11", "zoom": False},
 }
 
 
@@ -53,7 +61,7 @@ def scan_file_for_coded_filenames(source_file: Path) -> List[ScheduledId]:
     :return:
     """
     pattern = r"^(?P<date_str>\d{8})_.*_(?P<photo_id>\d{11,12})(\.jpg)?$"
-    contents = source_file.read_text('UTF-8').strip()
+    contents = source_file.read_text("UTF-8").strip()
     candidates = contents.split("\n")
     schedule: List[ScheduledId] = []
     for candidate in candidates:
@@ -71,12 +79,12 @@ def assert_schedule_unique(schedule: List[ScheduledId]):
     :param schedule:
     :return:
     """
-    dates = [item['date_str'] for item in schedule]
-    photos = [item['photo_id'] for item in schedule]
+    dates = [item["date_str"] for item in schedule]
+    photos = [item["photo_id"] for item in schedule]
     if not len(set(dates)) == len(dates):
-        raise UniquenessError('Dates are not unique: ' + ', '.join(dates))
+        raise UniquenessError("Dates are not unique: " + ", ".join(dates))
     if not len(set(photos)) == len(photos):
-        raise UniquenessError('Photo IDs are not unique')
+        raise UniquenessError("Photo IDs are not unique")
 
 
 def get_today_date_str() -> str:
@@ -84,10 +92,12 @@ def get_today_date_str() -> str:
     Get today's date in a format matching our input schedule
     :return:
     """
-    return datetime.today().strftime('%Y%m%d')
+    return datetime.today().strftime("%Y%m%d")
 
 
-def get_due_item_from_schedule(schedule: List[ScheduledId], for_date: str = None) -> Optional[ScheduledId]:
+def get_due_item_from_schedule(
+    schedule: List[ScheduledId], for_date: str = None
+) -> Optional[ScheduledId]:
     """
     Find the item in the schedule that's due to post today
     :param schedule:
@@ -95,11 +105,11 @@ def get_due_item_from_schedule(schedule: List[ScheduledId], for_date: str = None
     :return:
     """
     today_string = for_date if for_date else get_today_date_str()
-    today_items = [item for item in schedule if item['date_str'] == today_string]
+    today_items = [item for item in schedule if item["date_str"] == today_string]
     return today_items.pop() if len(today_items) > 0 else None
 
 
-def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTweet:
+def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = "") -> SimpleTweet:
     """
        - get k-size image URI -
          - https://www.flickr.com/services/api/flickr.photos.getSizes.html
@@ -111,21 +121,21 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
     :param photo_id:
     :return:
     """
-    flickr = init_flickr_client('./config.yml')
+    flickr = init_flickr_client("./config.yml")
 
     url = get_photo_url(flickr, photo_id)
 
     info = flickr.photos.getInfo(photo_id=photo_id)
-    when = info['photo']['dates']['taken']
-    title = read_content(info['photo']['title'])
-    flickr_description = read_content(info['photo']['description']).strip()
+    when = info["photo"]["dates"]["taken"]
+    title = read_content(info["photo"]["title"])
+    flickr_description = read_content(info["photo"]["description"]).strip()
     if len(flickr_description) > 0:
-        extended_description = ': ' + flickr_description.strip('.')
+        extended_description = ": " + flickr_description.strip(".")
     else:
-        extended_description = ''
+        extended_description = ""
 
     when_date = parse(when)
-    friendly_date = pendulum.instance(when_date).format('Do MMMM Y')  # type: ignore
+    friendly_date = pendulum.instance(when_date).format("Do MMMM Y")  # type: ignore
 
     locale = get_photo_location_parts(flickr, photo_id)
 
@@ -135,27 +145,27 @@ def build_tweet_by_flickr_photo_id(photo_id: str, hashtag: str = '') -> SimpleTw
 
     locale_string = join_locale(locale)
     if len(locale_string) > 0:
-        locale_string = '\n' + locale_string
+        locale_string = "\n" + locale_string
 
     native_territory = get_tagged_lands(info)
     if native_territory and (len(native_territory) > 0):
-        locale_string = locale_string + f'\n{native_territory} traditional territory'
+        locale_string = locale_string + f"\n{native_territory} traditional territory"
 
     properties_string = get_photo_properties_string(flickr, photo_id)
     if len(properties_string) > 0:
-        properties_string = '\n' + properties_string
+        properties_string = "\n" + properties_string
 
-    text = f'{title}, {friendly_date}{locale_string}{properties_string}'
+    text = f"{title}, {friendly_date}{locale_string}{properties_string}"
 
     if len(text) + len(hashtag) < 500:
-        text = text + f'\n{hashtag}'
+        text = text + f"\n{hashtag}"
 
-    print(f'Text length: {len(text)}')
+    print(f"Text length: {len(text)}")
 
     return {
-        'text': text,
-        'media': url,
-        'description': f'Photo of a {title}{extended_description}. Full details in post.',
+        "text": text,
+        "media": url,
+        "description": f"Photo of a {title}{extended_description}. Full details in post.",
     }
 
 
@@ -169,7 +179,7 @@ def get_tagged_place(info) -> Optional[str]:
     Returns:
 
     """
-    return get_machine_tag(info, 'geo:place')
+    return get_machine_tag(info, "geo:place")
 
 
 def get_tagged_lands(info) -> Optional[str]:
@@ -182,13 +192,15 @@ def get_tagged_lands(info) -> Optional[str]:
     Returns:
 
     """
-    return get_machine_tag(info, 'geo:native_territory')
+    return get_machine_tag(info, "geo:native_territory")
 
 
 def get_machine_tag(info, tag_label) -> Optional[str]:
-    tags = info['photo']['tags']['tag']
-    matched_tag = [t['raw'] for t in tags if t['raw'].startswith(f'{tag_label}=')]
-    tag_value = matched_tag[0].replace(f'{tag_label}=', '') if len(matched_tag) > 0 else None
+    tags = info["photo"]["tags"]["tag"]
+    matched_tag = [t["raw"] for t in tags if t["raw"].startswith(f"{tag_label}=")]
+    tag_value = (
+        matched_tag[0].replace(f"{tag_label}=", "") if len(matched_tag) > 0 else None
+    )
     return tag_value
 
 
@@ -208,36 +220,50 @@ def get_photo_properties_string(flickr, photo_id) -> str:
     :param photo_id:
     :return:
     """
-    properties_string = ''
+    properties_string = ""
     try:
         exif_data = flickr.photos.getExif(photo_id=photo_id)
-        properties = exif_data['photo']['exif']
+        properties = exif_data["photo"]["exif"]
         # print(properties)
 
-        model = first([read_content(p['raw']) for p in properties if p['tag'] == 'Model'])
-        exposure = first([read_content(p['raw']) for p in properties if p['tag'] == 'ExposureTime'])
-        aperture = first([read_content(p['clean']) for p in properties if p['tag'] == 'FNumber'])
-        iso = first([read_content(p['raw']) for p in properties if p['tag'] == 'ISO'])
-        focal = first([read_content(p['clean']) for p in properties if p['tag'] == 'FocalLength'])
+        model = first(
+            [read_content(p["raw"]) for p in properties if p["tag"] == "Model"]
+        )
+        exposure = first(
+            [read_content(p["raw"]) for p in properties if p["tag"] == "ExposureTime"]
+        )
+        aperture = first(
+            [read_content(p["clean"]) for p in properties if p["tag"] == "FNumber"]
+        )
+        iso = first([read_content(p["raw"]) for p in properties if p["tag"] == "ISO"])
+        focal = first(
+            [read_content(p["clean"]) for p in properties if p["tag"] == "FocalLength"]
+        )
         # raw: {'model': 'Canon EOS 90D', 'exposure': '1/1600', 'aperture': 'f/7.1', 'iso': '250', 'focal': '600 mm'}
         if exposure:
-            exposure = exposure + 's'
+            exposure = exposure + "s"
         if focal:
-            focal = focal.replace(' ', '')
+            focal = focal.replace(" ", "")
         if iso:
-            iso = 'ISO ' + iso
+            iso = "ISO " + iso
 
-        lens_raw = first([read_content(p['raw']) for p in properties if p['tag'] == 'LensModel'])
+        lens_raw = first(
+            [read_content(p["raw"]) for p in properties if p["tag"] == "LensModel"]
+        )
         if lens_raw in lens_lookup:
             lens = lens_lookup[lens_raw]
-            lens_info = f"{lens['name']} @ {focal}" if lens['zoom'] and focal else lens['name']
+            lens_info = (
+                f"{lens['name']} @ {focal}" if lens["zoom"] and focal else lens["name"]
+            )
         elif focal:
             lens_info = focal
         else:
             lens_info = None
 
         # print({'model': model, 'exposure': exposure, 'aperture': aperture, 'iso': iso, 'focal': focal})
-        properties_string = ', '.join([p for p in [model, lens_info, exposure, aperture, iso] if p])
+        properties_string = ", ".join(
+            [p for p in [model, lens_info, exposure, aperture, iso] if p]
+        )
         # print(properties_string)
     except flickrapi.exceptions.FlickrError:
         pass
@@ -265,7 +291,7 @@ def join_locale(locale: List[str]) -> str:
 
     """
     locale = [k for k in locale if k]
-    locale_string = ', '.join(locale)
+    locale_string = ", ".join(locale)
     return locale_string
 
 
@@ -282,13 +308,13 @@ def get_photo_location_parts(flickr, photo_id) -> List[str]:
     locale = []
     try:
         gps_data = flickr.photos.geo.getLocation(photo_id=photo_id)
-        location = gps_data['photo']['location']
-        neighbourhood = read_content(location['neighbourhood'])
-        locality = read_content(location['locality'])
-        state = read_content(location['region'])
-        country = read_content(location['country'])
-        if country in ('United States', 'USA'):
-            country = ''  # State (region) is adequate here
+        location = gps_data["photo"]["location"]
+        neighbourhood = read_content(location["neighbourhood"])
+        locality = read_content(location["locality"])
+        state = read_content(location["region"])
+        country = read_content(location["country"])
+        if country in ("United States", "USA"):
+            country = ""  # State (region) is adequate here
         locale = [neighbourhood, locality, state, country]
     except flickrapi.exceptions.FlickrError:
         pass
@@ -296,8 +322,8 @@ def get_photo_location_parts(flickr, photo_id) -> List[str]:
 
 
 def read_content(element: Optional[Dict[str, str]]) -> str:
-    """Return a subfield of _content if present, else '' """
-    return element['_content'] if element and element['_content'] else ''
+    """Return a subfield of _content if present, else ''"""
+    return element["_content"] if element and element["_content"] else ""
 
 
 def get_photo_url(flickr: flickrapi.FlickrAPI, photo_id: str) -> str:
@@ -308,8 +334,16 @@ def get_photo_url(flickr: flickrapi.FlickrAPI, photo_id: str) -> str:
     :return:
     """
     size_response = flickr.photos.getSizes(photo_id=photo_id)
-    k_urls = [size['source'] for size in size_response['sizes']['size'] if size['label'] == 'Large 2048']
-    o_urls = [size['source'] for size in size_response['sizes']['size'] if size['label'] == 'Original']
+    k_urls = [
+        size["source"]
+        for size in size_response["sizes"]["size"]
+        if size["label"] == "Large 2048"
+    ]
+    o_urls = [
+        size["source"]
+        for size in size_response["sizes"]["size"]
+        if size["label"] == "Original"
+    ]
     url = k_urls[0] if len(k_urls) > 0 else o_urls[0]
     return url
 
@@ -320,10 +354,12 @@ def init_twitter_client(config_file: str) -> twitter.Api:
     :param config_file:
     :return:
     """
-    config = load_config(config_file)['twitter']
-    api = twitter.Api(consumer_key=config['api_key'],
-                      consumer_secret=config['api_secret'],
-                      access_token_key=config['access_token_key'],
-                      access_token_secret=config['access_token_secret'])
+    config = load_config(config_file)["twitter"]
+    api = twitter.Api(
+        consumer_key=config["api_key"],
+        consumer_secret=config["api_secret"],
+        access_token_key=config["access_token_key"],
+        access_token_secret=config["access_token_secret"],
+    )
 
     return api

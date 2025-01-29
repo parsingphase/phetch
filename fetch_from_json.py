@@ -21,11 +21,13 @@ def parse_cli_args() -> argparse.Namespace:
         Namespace of provided arguments
     """
     parser = argparse.ArgumentParser(
-        description='Download list of images specified in a JSON file',
+        description="Download list of images specified in a JSON file",
     )
-    parser.add_argument('json', help='Path or URI of JSON file')
-    parser.add_argument('output', help='Directory to save files to')
-    parser.add_argument('--limit', required=False, help='Max images to download', type=int, default=0)
+    parser.add_argument("json", help="Path or URI of JSON file")
+    parser.add_argument("output", help="Directory to save files to")
+    parser.add_argument(
+        "--limit", required=False, help="Max images to download", type=int, default=0
+    )
     args = parser.parse_args()
     return args
 
@@ -42,15 +44,15 @@ def run_cli() -> None:
         photos = json.loads(content)
     else:
         # Assume file
-        with open(args.json, encoding='utf-8') as content_fp:
+        with open(args.json, encoding="utf-8") as content_fp:
             photos = json.load(content_fp)
 
     downloader = PhotoListFetcher()
     Path(args.output).mkdir(exist_ok=True, parents=True)
     if args.limit:
-        photos = photos[:args.limit]
+        photos = photos[: args.limit]
     downloader.fetch_photos(photos, args.output)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_cli()

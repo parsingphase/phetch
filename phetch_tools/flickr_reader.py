@@ -1,6 +1,7 @@
 """
 Class file for FlickrReader
 """
+
 from typing import Any, List, Optional
 
 from pathvalidate import sanitize_filename
@@ -19,6 +20,7 @@ class FlickrReader:
     """
     Flickr album downloader
     """
+
     preferred_size: Optional[str]
 
     def __init__(self, flickr_client: Any) -> None:
@@ -26,7 +28,7 @@ class FlickrReader:
         self.flickr = flickr_client
         self.silent = False
 
-    def set_silent(self, silent: bool) -> 'FlickrReader':
+    def set_silent(self, silent: bool) -> "FlickrReader":
         """
         Mute informational output
         :param silent:
@@ -35,7 +37,7 @@ class FlickrReader:
         self.silent = silent
         return self
 
-    def set_preferred_size_suffix(self, suffix: str) -> 'FlickrReader':
+    def set_preferred_size_suffix(self, suffix: str) -> "FlickrReader":
         """
         Set the preferred size suffix; valid values are listed at https://www.flickr.com/services/api/misc.urls.html
         :param suffix:
@@ -66,11 +68,11 @@ class FlickrReader:
         :param path:
         :return:
         """
-        photo_title = photo['title']
+        photo_title = photo["title"]
         photo_slug = self.make_title_slug(photo_title)
-        outfile = f'{photo_slug}{photo["id"]}.jpg'
+        outfile = f"{photo_slug}{photo['id']}.jpg"
         if path:
-            outfile = f'{path}/{outfile}'
+            outfile = f"{path}/{outfile}"
         return outfile
 
     @staticmethod
@@ -80,8 +82,8 @@ class FlickrReader:
         :param photo_title:
         :return:
         """
-        photo_slug = str(sanitize_filename(photo_title)) + '_' if photo_title else ''
-        return photo_slug.lower().replace(' ', '_')
+        photo_slug = str(sanitize_filename(photo_title)) + "_" if photo_title else ""
+        return photo_slug.lower().replace(" ", "_")
 
     def fetch_photoset_photos(self, album_id: str, page: int = 1):
         """
@@ -93,10 +95,12 @@ class FlickrReader:
         :return:
         """
         if not self.silent:
-            print(f'Fetching {album_id}, page {page}')
-        extras = "date_taken,url_o" + (",url_" + self.preferred_size if self.preferred_size else "")
+            print(f"Fetching {album_id}, page {page}")
+        extras = "date_taken,url_o" + (
+            ",url_" + self.preferred_size if self.preferred_size else ""
+        )
         photoset_response = self.flickr.photosets.getPhotos(
-            photoset_id=album_id, extras=extras, page=page, media='photos'
+            photoset_id=album_id, extras=extras, page=page, media="photos"
         )
         return photoset_response
 
@@ -108,16 +112,16 @@ class FlickrReader:
         """
         photos = []  # List[Photo]
         album_response = self.flickr.photosets.getInfo(photoset_id=album)
-        album_title = album_response['photoset']['title']['_content']
+        album_title = album_response["photoset"]["title"]["_content"]
         if not self.silent:
-            print(f'Scanning album {album_title} ({album})')
+            print(f"Scanning album {album_title} ({album})")
 
         page = 1
         photoset_response = self.fetch_photoset_photos(album, page)
-        pages = int(photoset_response['photoset']['pages'])
+        pages = int(photoset_response["photoset"]["pages"])
 
         while page <= pages:
-            album_photos = photoset_response['photoset']['photo']
+            album_photos = photoset_response["photoset"]["photo"]
             for album_photo in album_photos:
                 filename = self.local_filename_for_photo(album_photo)
                 photo_url = album_photo["url_o"]
@@ -125,17 +129,17 @@ class FlickrReader:
                     photo_url = album_photo["url_" + self.preferred_size]
 
                 photo: Photo = {
-                    'url': photo_url,
-                    'local_file': filename,
-                    'title': album_photo['title'],
-                    'taken': album_photo['datetaken']
+                    "url": photo_url,
+                    "local_file": filename,
+                    "title": album_photo["title"],
+                    "taken": album_photo["datetaken"],
                 }
                 photos.append(photo)
 
             page += 1
             if page <= pages:
                 if not self.silent:
-                    print(f' Fetch page {page}/{pages}')
+                    print(f" Fetch page {page}/{pages}")
                 photoset_response = self.fetch_photoset_photos(album, page)
 
         return photos

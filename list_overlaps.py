@@ -2,6 +2,7 @@
 """
 Fetch photos found in multiple Flickr albums. Run with --help for details
 """
+
 import argparse
 import csv
 import random
@@ -27,18 +28,27 @@ def parse_cli_args() -> argparse.Namespace:
         Namespace of provided arguments
     """
     parser = argparse.ArgumentParser(
-        description='List photos found in multiple flickr albums',
+        description="List photos found in multiple flickr albums",
     )
-    parser.add_argument('album_id', help='Numeric IDs of album from Flickr URL', nargs='+')
-    parser.add_argument('--from-date', help='Start date in YYYYmmdd format')
-    parser.add_argument('--unique-titles', help='Output only one row per title', action='store_true')
-    parser.add_argument('--exclude-from-file', help='Exclude photos already listed in file')
-    parser.add_argument('--any-subsequent-album', help='List photos in the first album and ANY subsequent one, '
-                                                       'instead of ALL', action='store_true')
-    parser.add_argument('--csv', help='Output as CSV', action='store_true')
+    parser.add_argument(
+        "album_id", help="Numeric IDs of album from Flickr URL", nargs="+"
+    )
+    parser.add_argument("--from-date", help="Start date in YYYYmmdd format")
+    parser.add_argument(
+        "--unique-titles", help="Output only one row per title", action="store_true"
+    )
+    parser.add_argument(
+        "--exclude-from-file", help="Exclude photos already listed in file"
+    )
+    parser.add_argument(
+        "--any-subsequent-album",
+        help="List photos in the first album and ANY subsequent one, instead of ALL",
+        action="store_true",
+    )
+    parser.add_argument("--csv", help="Output as CSV", action="store_true")
     args = parser.parse_args()
     if len(args.album_id) < 2:
-        print('Must list at least 2 albums')
+        print("Must list at least 2 albums")
         parser.print_usage()
         sys.exit(1)
     return args
@@ -66,12 +76,12 @@ def unique_titles(photos: List[Photo], defer_remainder=False) -> List[Photo]:
     filtered = []
     deferred = []
     for photo in photos:
-        if photo['title'] in seen_titles:
+        if photo["title"] in seen_titles:
             deferred.append(photo)
             print(f"{photo['title']} =>", file=sys.stderr)
         else:
             filtered.append(photo)
-            seen_titles.append(photo['title'])
+            seen_titles.append(photo["title"])
             print(f"{photo['title']} +", file=sys.stderr)
 
     if defer_remainder and len(deferred) > 0:
@@ -91,15 +101,15 @@ def exclude_from_file(photos: List[Photo], exclusion_file: str) -> List[Photo]:
     if not exclusion_path.exists():
         raise FileNotFoundError(f"{exclusion_file} not found")
     exclusions = scan_file_for_coded_filenames(exclusion_path)
-    exclude_ids = [p['photo_id'] for p in exclusions]
+    exclude_ids = [p["photo_id"] for p in exclusions]
     filtered: List[Photo] = []
 
     pattern = r"^(?P<description>\S+)_(?P<photo_id>\d{11,12})(\.jpg)?$"
     for photo in photos:
-        match = re.match(pattern, photo['local_file'])
+        match = re.match(pattern, photo["local_file"])
         if match:
             matches = match.groupdict()
-            if matches['photo_id'] not in exclude_ids:
+            if matches["photo_id"] not in exclude_ids:
                 filtered.append(photo)
 
     return filtered
@@ -112,30 +122,36 @@ def run_cli() -> None:
     """
     args = parse_cli_args()
     album_ids: List = args.album_id
-    flickr_reader = FlickrReader(init_flickr_client('./config.yml'))
+    flickr_reader = FlickrReader(init_flickr_client("./config.yml"))
     flickr_reader.set_silent(True)
     albums = [flickr_reader.scan_album(album_id) for album_id in album_ids]
 
     filtered = albums.pop(0)
     if args.any_subsequent_album:
-        print('Compositing subsequent albums', file=sys.stderr)
+        print("Compositing subsequent albums", file=sys.stderr)
         composite: List[Photo] = []
         for album in albums:
             composite = composite + album
         filtered = photos_intersection(filtered, composite)
     else:
-        print('Calculating union of ALL albums', file=sys.stderr)
+        print("Calculating union of ALL albums", file=sys.stderr)
         for album in albums:
             filtered = photos_intersection(filtered, album)
 
     if args.unique_titles:
-        filtered = unique_titles(filtered, False)  # used as a pure uniqueness function here
+        filtered = unique_titles(
+            filtered, False
+        )  # used as a pure uniqueness function here
 
     if args.exclude_from_file:
         filtered = exclude_from_file(filtered, args.exclude_from_file)
 
     # report_files(filtered)
-    from_date = datetime.strptime(args.from_date, '%Y%m%d').date() if args.from_date else date.today()
+    from_date = (
+        datetime.strptime(args.from_date, "%Y%m%d").date()
+        if args.from_date
+        else date.today()
+    )
     shuffle_and_prepend_date(filtered, from_date, args.csv)
 
 
@@ -145,7 +161,7 @@ def report_files(filtered: List[Photo]):
     :param filtered:
     :return:
     """
-    filenames = [photo['local_file'] for photo in filtered]
+    filenames = [photo["local_file"] for photo in filtered]
     filenames.sort()
     print("\n".join(filenames))
 
@@ -164,18 +180,20 @@ def shuffle_and_prepend_date(photos: List[Photo], start: date, as_csv: bool = Fa
     random.shuffle(photos)
     photos = unique_titles(photos, True)  # used to reduce clustering here
 
-    filenames = [photo['local_file'] for photo in photos]
+    filenames = [photo["local_file"] for photo in photos]
     today = start
     for filename in filenames:
-        target_date = today.strftime('%Y%m%d')
+        target_date = today.strftime("%Y%m%d")
         if csv_writer:
             matched = re.search(r"_(\d{11,12})\.", filename)
             photo_id = matched.group(1) if matched else None
-            csv_writer.writerow([target_date, filename, PHOTO_URL_PREFIX + photo_id if photo_id else ''])
+            csv_writer.writerow(
+                [target_date, filename, PHOTO_URL_PREFIX + photo_id if photo_id else ""]
+            )
         else:
-            print(target_date + '_' + filename)
+            print(target_date + "_" + filename)
         today = today + timedelta(days=1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_cli()

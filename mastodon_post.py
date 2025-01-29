@@ -2,6 +2,7 @@
 """
 Script to post images to Mastodon
 """
+
 import re
 import sys
 from os.path import exists
@@ -12,12 +13,15 @@ import requests
 from mastodon import Mastodon
 
 from phetch_tools import load_config
-from phetch_tools.social import (ScheduledId, SimpleTweet,
-                                 build_tweet_by_flickr_photo_id,
-                                 get_due_item_from_schedule,
-                                 scan_file_for_coded_filenames)
+from phetch_tools.social import (
+    ScheduledId,
+    SimpleTweet,
+    build_tweet_by_flickr_photo_id,
+    get_due_item_from_schedule,
+    scan_file_for_coded_filenames,
+)
 
-DEFAULT_HASHTAG = '#DailyBird'
+DEFAULT_HASHTAG = "#DailyBird"
 
 
 def init_mastodon_client(config_file) -> Mastodon:
@@ -30,26 +34,33 @@ def init_mastodon_client(config_file) -> Mastodon:
     Returns:
 
     """
-    mastodon_config = load_config(config_file)['mastodon']
+    mastodon_config = load_config(config_file)["mastodon"]
 
     # If you're using 2FA, you'll need your client's access_token, otherwise you can use username/password
-    access_token = mastodon_config['access_token'] if 'access_token' in mastodon_config else None
+    access_token = (
+        mastodon_config["access_token"] if "access_token" in mastodon_config else None
+    )
 
     mastodon = Mastodon(
-        client_id=mastodon_config['client_id'],
-        client_secret=mastodon_config['client_secret'],
-        api_base_url=mastodon_config['api_base_url'],
+        client_id=mastodon_config["client_id"],
+        client_secret=mastodon_config["client_secret"],
+        api_base_url=mastodon_config["api_base_url"],
         access_token=access_token,
     )
 
     if not access_token:
         mastodon.log_in(
-            mastodon_config['user_email'],
-            mastodon_config['user_password'],
-            scopes=['write']
+            mastodon_config["user_email"],
+            mastodon_config["user_password"],
+            scopes=["write"],
         )
 
-    print('Mastodon version: ' + mastodon.retrieve_mastodon_version() + ' on ' + mastodon.api_base_url)
+    print(
+        "Mastodon version: "
+        + mastodon.retrieve_mastodon_version()
+        + " on "
+        + mastodon.api_base_url
+    )
 
     return mastodon
 
@@ -60,7 +71,7 @@ def run_cli() -> None:
     Returns:
 
     """
-    source_file = 'data/2022.txt'
+    source_file = "data/2022.txt"
     post_toot_from_schedule_file(source_file)
 
 
@@ -78,7 +89,7 @@ def post_toot_from_schedule_file(source_file) -> None:
     post_toot_from_schedule(schedule)
 
 
-def post_toot_from_schedule(schedule: List[ScheduledId], hashtag: str = '') -> None:
+def post_toot_from_schedule(schedule: List[ScheduledId], hashtag: str = "") -> None:
     """
     Check for a due toot, build and post it
     Compare post_tweet_from_schedule
@@ -89,12 +100,12 @@ def post_toot_from_schedule(schedule: List[ScheduledId], hashtag: str = '') -> N
     """
     due_photo = get_due_item_from_schedule(schedule)
     if not due_photo:
-        print('No tweet scheduled')
+        print("No tweet scheduled")
         sys.exit(1)
-    tweet: SimpleTweet = build_tweet_by_flickr_photo_id(due_photo['photo_id'], hashtag)
-    mastodon = init_mastodon_client('./config.yml')
-    post_image_status(mastodon, tweet['media'], tweet['text'], tweet['description'])
-    print('Tooted', tweet)
+    tweet: SimpleTweet = build_tweet_by_flickr_photo_id(due_photo["photo_id"], hashtag)
+    mastodon = init_mastodon_client("./config.yml")
+    post_image_status(mastodon, tweet["media"], tweet["text"], tweet["description"])
+    print("Tooted", tweet)
 
 
 def post_image_status(mastodon, image, text, description=None) -> None:
@@ -110,17 +121,19 @@ def post_image_status(mastodon, image, text, description=None) -> None:
     Returns:
 
     """
-    if re.match('^http(s?):', image):
+    if re.match("^http(s?):", image):
         response = requests.get(image, allow_redirects=True)
-        content_type = response.headers['Content-Type']
+        content_type = response.headers["Content-Type"]
         file_content = response.content
-        media = mastodon.media_post(file_content, mime_type=content_type, description=description)
+        media = mastodon.media_post(
+            file_content, mime_type=content_type, description=description
+        )
     elif exists(image):
         media = mastodon.media_post(image)
     else:
-        raise Exception(f'File or URL {image} not found')
-    mastodon.status_post(text, media_ids=[media['id']], visibility='public')
+        raise Exception(f"File or URL {image} not found")
+    mastodon.status_post(text, media_ids=[media["id"]], visibility="public")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_cli()

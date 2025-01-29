@@ -34,10 +34,10 @@ def run_cli() -> None:
         place = None
         found = False
         for shape in shapefiles:
-            finder = ShapefileLocationFinder(shape['filename'], shape['name_field'])
+            finder = ShapefileLocationFinder(shape["filename"], shape["name_field"])
             place = finder.place_from_lat_lng(point)
             if place:
-                print(point, shape['name'], ':', place, '' if found else '*')
+                print(point, shape["name"], ":", place, "" if found else "*")
                 found = True
                 # break
         if not found:
