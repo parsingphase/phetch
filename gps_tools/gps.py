@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, cast
+from typing import Tuple, cast
 
 Rational = Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
 

@@ -36,7 +36,7 @@ def run_cli() -> None:
                             photo_id = native_page_url.split('/')[-2]
                             try:
                                 photo_info = flickr.photos.getInfo(photo_id=photo_id)
-                            except Exception as e:
+                            except Exception:
                                 if last_was_dot:
                                     print('')
                                     last_was_dot = False

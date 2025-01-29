@@ -2,7 +2,7 @@
 
 from phetch_tools.social import (ScheduledId,
                                  scan_file_for_coded_filenames)
-from typing import Any, Dict, Generator, List, Optional, cast
+from typing import List
 from pathlib import Path
 from phetch_tools.init_flickr import (init_flickr_client, flickr_get_token)
 import flickrapi

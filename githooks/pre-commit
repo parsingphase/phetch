@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -euxo pipefail
+
+uv run ruff check --statistics
+uv run ruff format --check
+uv run pyright
