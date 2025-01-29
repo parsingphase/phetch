@@ -3,23 +3,20 @@ Flickr API tools [![CI](https://github.com/parsingphase/phetch/actions/workflows
 
 ## Setup 
 
-### On macOS / *nix:
+### Install `uv`:
 
-    python3 -m venv venv
-    source ./venv/bin/activate
-    make install
+From homebrew:
 
-### M1 Mac Issues
+    brew install uv
 
-Some libraries (pyexiv2) are not available for M1 yet. Therefore the script needs to be coerced to run under 
-Rosetta. This can be achieved by using iTerm2 as the shell, running it via Rosetta (checkbox on info panel) and, 
-for some reason, using `pipenv shell` instead of the above `venv` stanza.
+### Install libraries
+
+    uv sync
 
 ## Configuration
 
 - Get a non-commercial key from https://www.flickr.com/services/apps/create/noncommercial/
 - Copy `config.yml.sample` to `config.yml` and fill in the values from this key
-- Twitter keys can be obtained from https://developer.twitter.com/en/apps, if needed
 
 ## Tools
 
@@ -27,7 +24,7 @@ for some reason, using `pipenv shell` instead of the above `venv` stanza.
 
 Fetch images from a list of albums into a local directory
 
-For usage, `python3 phetch.py --help`
+For usage, `python phetch.py --help`
 
     usage: phetch.py [-h] [--no-download] [--prefer-size-suffix SUFFIX] [--apply-watermark WATERMARK_FILE] [--watermark-opacity WATERMARK_OPACITY] [--limit LIMIT] [--delete-missing]
                      [--sort-order {natural,random,alphabetical,taken}] [--sort-reverse] [--save-photo-list SAVE_PHOTO_LIST]
@@ -56,7 +53,7 @@ For usage, `python3 phetch.py --help`
       --save-photo-list SAVE_PHOTO_LIST
                             File to export JSON album index to
 
-eg `python3 phetch.py 72157714807457311 download`
+eg `python phetch.py 72157714807457311 download`
 
 To set up an OSX screensaver using a downloaded album, see [docs/osx-saver.md](docs/osx-saver.md)
 
@@ -70,7 +67,7 @@ Watermark all of the JPG images in a specified folder, adding new versions in a 
 You will need to supply a transparent png/gif as  the watermark. The watermark is assumed to be 
 white-on-transparent and will be inverted when being applied to a lighter area.
 
-For usage, `python3 automark.py --help`
+For usage, `python automark.py --help`
 
     usage: automark.py [-h] [--limit LIMIT] [--resize MAX_EDGE] dir
     
@@ -102,7 +99,7 @@ that date, and use the Flickr and Twitter APIs to find, describe and tweet that 
 This script can be also used as an AWS lambda script, to run from a Cloudwatch schedule.
 The batch file "build-potd-lambda.sh" helps build the appropriate lambda bundle.
 
-For usage, `python3 cron_image_tweet.py --help`
+For usage, `python cron_image_tweet.py --help`
 
     usage: cron_image_tweet.py [-h] (--source-flickr-download-dir SOURCE_FLICKR_DOWNLOAD_DIR | --source-flickr-file-list SOURCE_FLICKR_FILE_LIST) [--dry-run]
     
@@ -125,7 +122,7 @@ directory:
  - Any image ID found in the filename is stored as a keyword 'library:fileId=NUMBER'
  - Optionally, filename is modified to include the subject
 
-Usage: `python3 introspect.py -h`
+Usage: `python introspect.py -h`
 
     usage: introspect.py [-h] [--rename] dir
     

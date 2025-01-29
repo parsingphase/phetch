@@ -1,0 +1,27 @@
+[project]
+name = "phetch"
+version = "0.1.0"
+description = "Photo tooling workflow"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "flickrapi>=2.4.0",
+    "iptcinfo3>=2.1.4",
+    "mastodon-py>=1.8.1",
+    "pathvalidate>=3.2.3",
+    "pendulum>=3.0.0",
+    "pillow>=11.1.0",
+    "pyproj>=3.7.0",
+    "pyshp>=2.3.1",
+    "python-twitter>=3.5",
+    "pyyaml>=6.0.2",
+    "requests>=2.32.3",
+    "shapely>=2.0.6",
+]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.392.post0",
+    "pytest>=8.3.4",
+    "ruff>=0.9.3",
+]
