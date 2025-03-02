@@ -28,6 +28,26 @@ GPS_LOCATION_KEYWORD = "Approximate GPS location"
 mute_iptcinfo_logger()
 
 
+def get_common_names_by_family(family: str, species: str):
+    family_common_names = {
+        'Accipitridae': ["Raptors", "Hawks"],
+        'Strigidae': ["Owls", "Raptors"],
+        'Anatidae': ["Ducks"],  # (and geese)
+        'Parulidae': ["Warblers"],
+        'Laridae': ["Gulls"],  # (and terns)
+        'Picidae': ["Woodpeckers"],
+        'Trochilidae': ["Hummingbirds"],
+        'Passerellidae': ["Sparrows"],
+        'Passeridae': ["Sparrows"],
+    }
+
+    # TODO: Add better duck / goose detection on Anatidae
+    if "Goose" in species or "Brant" in species or "Tern" in species:
+        return []
+
+    return family_common_names[family] if family in family_common_names else []
+
+
 def parse_cli_args() -> argparse.Namespace:
     """
     Specify and parse command-line arguments
@@ -218,13 +238,6 @@ def run_cli() -> None:
         iptc_changed = False
         iptc = IPTCInfo(filename, inp_charset="utf-8", out_charset="utf-8")
 
-        existing_keywords = [k for k in iptc["keywords"]]
-
-        for keyword in keywords:
-            if keyword not in existing_keywords:
-                iptc["keywords"].append(keyword)
-                iptc_changed = True
-
         # Is there already a subject?
         subject = iptc["object name"] if iptc["object name"] else None
         if not subject:
@@ -239,15 +252,27 @@ def run_cli() -> None:
                 # print(translations)
                 if subject and (subject in translations):
                     translated_subject = translations[subject]
+                    # implies it's a bird
+                    keywords.append('Birds')
                     for key in translated_subject:
-                        if key not in ["spanish", "french"]:
+                        if key == 'family':
+                            common_names = get_common_names_by_family(translated_subject[key], subject)
+                            for term in common_names:
+                                keywords.append(term)
+                        elif key not in ["spanish", "french"]:
                             keyword = translated_subject[key]
                             # translated keywords should all be valid utf-8 as loaded
                             # looks like we're double-encoding?
                             # str.encode, bytes.decode… str is a list of codepoints
-                            if keyword not in existing_keywords:
-                                iptc["keywords"].append(keyword)  # don't re-encode it!
-                    iptc_changed = True
+                            if keyword not in keywords:
+                                keywords.append(keyword)  # don't re-encode it!
+
+        existing_keywords = [k for k in iptc["keywords"]]
+
+        for keyword in keywords:
+            if keyword not in existing_keywords:
+                iptc["keywords"].append(keyword)
+                iptc_changed = True
 
         # Save IPTC if changed
         if iptc_changed:
