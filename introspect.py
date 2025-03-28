@@ -30,19 +30,19 @@ mute_iptcinfo_logger()
 
 def get_common_names_by_family(family: str, species: str):
     family_common_names = {
-        'Accipitridae': ["Raptors", "Hawks"],
-        'Strigidae': ["Owls", "Raptors"],
-        'Anatidae': ["Ducks"],  # (and geese)
-        'Parulidae': ["Warblers"],
-        'Laridae': ["Gulls"],  # (and terns)
-        'Picidae': ["Woodpeckers"],
-        'Trochilidae': ["Hummingbirds"],
-        'Passerellidae': ["Sparrows"],
-        'Passeridae': ["Sparrows"],
+        'Accipitridae': ["Raptor", "Hawk"],
+        'Strigidae': ["Owl", "Raptor"],
+        'Anatidae': ["Duck"],  # (and geese & swans)
+        'Parulidae': ["Warbler"],
+        'Laridae': ["Gull"],  # (and terns)
+        'Picidae': ["Woodpecker"],
+        'Trochilidae': ["Hummingbird"],
+        'Passerellidae': ["Sparrow"],
+        'Passeridae': ["Sparrow"],
     }
 
     # TODO: Add better duck / goose detection on Anatidae
-    if "Goose" in species or "Brant" in species or "Tern" in species:
+    if "Goose" in species or "Brant" in species or "Tern" in species or "Swan" in species:
         return []
 
     return family_common_names[family] if family in family_common_names else []
@@ -253,7 +253,7 @@ def run_cli() -> None:
                 if subject and (subject in translations):
                     translated_subject = translations[subject]
                     # implies it's a bird
-                    keywords.append('Birds')
+                    keywords.append('Bird')
                     for key in translated_subject:
                         if key == 'family':
                             common_names = get_common_names_by_family(translated_subject[key], subject)
