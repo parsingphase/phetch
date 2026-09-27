@@ -116,12 +116,12 @@ def populated_keys_changed(original: Dict, revised: Dict) -> bool:
     for key, value in revised.items():
         if key in original:
             if isinstance(
-                value, list
+                    value, list
             ):  # strictly, any iterable, but we should only see lists
                 changed = (
-                    len(set(value) - set(original[key]))
-                    + len(set(original[key]) - set(value))
-                ) > 0
+                                  len(set(value) - set(original[key]))
+                                  + len(set(original[key]) - set(value))
+                          ) > 0
             else:
                 changed = original[key] != revised[key]
         else:

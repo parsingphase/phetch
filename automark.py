@@ -30,8 +30,17 @@ def parse_cli_args() -> argparse.Namespace:
     parser.add_argument(
         "--resize", required=False, help="Resize to fit box", type=int, dest="max_edge"
     )
+    parser.add_argument(
+        "--corner", required=False, help="Corner to watermark", default="br"
+    )
     args = parser.parse_args()
     return args
+
+
+def corner_to_bool(corner):
+    bottom = corner[0]=='b'
+    right = corner[1]=='r'
+    return bottom,right
 
 
 def run_cli() -> None:
@@ -40,6 +49,8 @@ def run_cli() -> None:
     :return:
     """
     args = parse_cli_args()
+    bottom, right = corner_to_bool(args.corner)
+
     script_dir = Path(__file__).parent
     config = load_config(str(script_dir / Path("config.yml")))
     watermark = Path(config["watermark"]["file"])
@@ -65,7 +76,7 @@ def run_cli() -> None:
             pass
         else:
             print(f"Watermarking {image} => {output}")
-            watermarker.copy_with_watermark(str(image), str(output), args.max_edge)
+            watermarker.copy_with_watermark(str(image), str(output), args.max_edge, bottom, right)
             done += 1
             if args.limit and (done >= args.limit):
                 break

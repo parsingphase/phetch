@@ -32,7 +32,7 @@ cd "${SCRIPT_DIR}"
 uv run introspect.py --translation-json data/speciesMultilingual.json  --rename "$IMAGE_DIR_ABS"
 #"${SCRIPT_DIR}/introspect.py" --rename "$IMAGE_DIR_ABS"
 uv run find_photo_openspace.py "$IMAGE_DIR_ABS"
-uv run automark.py --resize 2048 "$IMAGE_DIR_ABS"
+uv run automark.py --resize 2048  --corner br "$IMAGE_DIR_ABS"
 
 echo Creating index "$IMAGE_DIR_ABS/catalog.txt"
 echo "Index" > "$IMAGE_DIR_ABS/catalog.txt"

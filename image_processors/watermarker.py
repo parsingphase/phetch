@@ -129,7 +129,7 @@ class Watermarker:
         write_iptc(image_file_path, iptc)
 
     def copy_with_watermark(
-        self, input_file: str, output_file: str, max_edge: Optional[int] = None
+        self, input_file: str, output_file: str, max_edge: Optional[int] = None,  bottom = True, right=True
     ) -> None:
         """
         Apply the loaded watermark to the specified image and save it
@@ -152,11 +152,11 @@ class Watermarker:
             if ratio < 1:
                 image = image.resize(size, Image.LANCZOS)
 
-        image = self.watermark_image(image)
+        image = self.watermark_image(image, bottom, right)
         standard_save(image, output_file)
         write_iptc(output_file, iptc)
 
-    def watermark_image(self, image: ImageFile) -> ImageFile:
+    def watermark_image(self, image: ImageFile, bottom = True, right=True) -> ImageFile:
         """
         Add the watermark to the loaded image object
 
@@ -166,8 +166,16 @@ class Watermarker:
         watermark_width, watermark_height, border_w, border_h = (
             self.calculate_watermark_dimensions(image)
         )
-        watermark_left = image.width - watermark_width - border_w
-        watermark_top = image.height - watermark_height - border_h
+        if right:
+            watermark_left = image.width - watermark_width - border_w
+        else:
+            watermark_left = border_w
+
+        if bottom:
+            watermark_top = image.height - watermark_height - border_h
+        else:
+            watermark_top = border_h
+
         # "bright" area is approximate; we currently just go from top-left of watermark to bottom-right of image
         area_is_bright = self.watermark_area_is_bright(
             image, watermark_left, watermark_top
